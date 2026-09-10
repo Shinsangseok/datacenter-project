@@ -1,0 +1,180 @@
+# Kubernetes-based Data Center AI Monitoring System
+
+A Kubernetes-based monitoring project that simulates data center server metrics, performs AI-based anomaly detection, and visualizes the results using Prometheus and Grafana.
+
+## Project Overview
+
+This project simulates multiple data center servers and continuously generates infrastructure metrics such as CPU usage, memory usage, temperature, and power consumption.
+
+The generated metrics are processed by an AI inference API and monitored through Prometheus and Grafana.
+
+## Architecture
+
+```text
+Data Center Simulator
+        |
+        | HTTP
+        v
+FastAPI Inference Server
+        |
+        | AI Prediction
+        v
+Normal / Anomaly Detection
+        |
+        +--------------------+
+        |                    |
+        v                    v
+      MySQL              /metrics
+       RDS                   |
+                             v
+                        Prometheus
+                             |
+                             v
+                          Grafana
+```
+
+The application and monitoring components run on a single-node K3s cluster hosted on AWS EC2.
+
+## Tech Stack
+
+- AWS EC2
+- AWS RDS (MySQL)
+- Kubernetes (K3s)
+- Docker
+- Python
+- FastAPI
+- scikit-learn
+- Prometheus
+- Grafana
+- Helm
+
+## AI Anomaly Detection
+
+A machine learning model is used to classify simulated server measurements as:
+
+- `NORMAL`
+- `ANOMALY`
+
+The inference server receives server measurements and returns the prediction result.
+
+Example:
+
+```json
+{
+  "server_id": "server-002",
+  "prediction": "ANOMALY",
+  "probability": 1.0
+}
+```
+
+## Prometheus Metrics
+
+The application exposes metrics that are collected by Prometheus.
+
+```text
+datacenter_cpu_percent
+datacenter_memory_percent
+datacenter_temperature_celsius
+datacenter_power_watts
+datacenter_predictions_total
+datacenter_anomalies_total
+```
+
+## Grafana Monitoring Dashboard
+
+The Grafana dashboard visualizes:
+
+- Server CPU Usage
+- Server Memory Usage
+- Server Temperature
+- Server Power Usage
+- Prediction Status
+- Anomaly Rate
+
+![Grafana Dashboard](grafana/screenshots/datacenter-monitoring-dashboard.png)
+
+Dashboard JSON:
+
+```text
+grafana/dashboards/datacenter-monitoring-dashboard.json
+```
+
+The exported JSON can be imported into another Grafana instance to recreate the dashboard.
+
+## Kubernetes
+
+The project is deployed to a single-node K3s cluster.
+
+Main Kubernetes resources include:
+
+- Namespace
+- Deployment
+- Service
+- ConfigMap
+- Secret
+- PersistentVolumeClaim
+
+Monitoring components are deployed using Helm.
+
+```text
+Grafana
+Prometheus
+Grafana Image Renderer
+```
+
+## Project Structure
+
+```text
+datacenter-project/
+├── backend/
+├── k8s/
+│   ├── configmap.yaml
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── namespaces.yaml
+│   ├── simulator-configmap.yaml
+│   ├── simulator-deployment.yaml
+│   ├── prometheus-values.yaml
+│   └── grafana-values.yaml
+│
+├── grafana/
+│   ├── dashboards/
+│   │   └── datacenter-monitoring-dashboard.json
+│   └── screenshots/
+│       └── datacenter-monitoring-dashboard.png
+│
+├── requirements.txt
+└── README.md
+```
+
+## Monitoring Flow
+
+```text
+Simulated Metrics
+      |
+      v
+FastAPI
+      |
+      v
+AI Prediction
+      |
+      v
+Prometheus Metrics
+      |
+      v
+Prometheus
+      |
+      v
+Grafana Dashboard
+```
+
+## Purpose
+
+The goal of this project is to practice building an end-to-end cloud-native monitoring environment including:
+
+- Kubernetes application deployment
+- AI inference API
+- Database integration
+- Prometheus metric collection
+- Grafana visualization
+- Infrastructure configuration using Kubernetes and Helm
