@@ -122,6 +122,26 @@ Prometheus
 Grafana Image Renderer
 ```
 
+## Kubernetes Self-Healing
+
+Kubernetes self-healing was verified by manually deleting one of the FastAPI Pods managed by the `datacenter-api` Deployment.
+
+The deleted Pod was automatically replaced by Kubernetes.
+
+```text
+Existing Pod
+  -> Terminating
+  -> Deleted
+  -> New Pod Pending
+  -> ContainerCreating
+  -> Running (1/1)
+```
+
+After recovery, the `datacenter-api` Deployment returned to its desired state with two running replicas.
+
+This verifies that Kubernetes can automatically restore application Pods when a managed Pod is lost.
+
+
 ## Project Structure
 
 ```text
