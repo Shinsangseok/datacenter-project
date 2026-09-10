@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: simulator-egress-policy
+  namespace: datacenter-sim
+spec:
+  podSelector:
+    matchLabels:
+      app: datacenter-simulator
+
+  policyTypes:
+    - Egress
+
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Allow Simulator -> FastAPI
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: datacenter-app
+          podSelector:
+            matchLabels:
+              app: datacenter-api
+      ports:
+        - protocol: TCP
+          port: 8000

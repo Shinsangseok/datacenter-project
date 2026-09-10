@@ -142,6 +142,43 @@ After recovery, the `datacenter-api` Deployment returned to its desired state wi
 This verifies that Kubernetes can automatically restore application Pods when a managed Pod is lost.
 
 
+## Kubernetes NetworkPolicy
+
+NetworkPolicy was added to restrict outbound traffic from the Data Center Simulator.
+
+The Simulator is allowed to communicate only with:
+
+- Kubernetes DNS on TCP/UDP port 53
+- `datacenter-api` Pods on TCP port 8000
+
+The API is accessed through the Kubernetes Service on port 8080, which forwards traffic to the FastAPI Pods on `targetPort: 8000`.
+
+```text
+Simulator
+    |
+    | allowed
+    v
+datacenter-api Service :8080
+    |
+    v
+FastAPI Pod :8000
+
+Simulator
+    |
+    | blocked
+    v
+Other workloads such as Prometheus
+```
+
+The policy was verified using an A/B test:
+
+- Simulator -> API with NetworkPolicy: HTTP 200
+- Simulator -> Prometheus with NetworkPolicy: blocked
+- Simulator -> Prometheus without NetworkPolicy: HTTP 200
+
+This verifies that Kubernetes NetworkPolicy is actively restricting unnecessary outbound communication while preserving required application traffic.
+
+
 ## Project Structure
 
 ```text
