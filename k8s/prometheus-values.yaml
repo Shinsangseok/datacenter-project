@@ -1,0 +1,40 @@
+alertmanager:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true
+
+prometheus-node-exporter:
+  enabled: true
+
+server:
+  persistentVolume:
+    enabled: true
+    storageClass: local-path
+    accessModes:
+      - ReadWriteOnce
+    size: 4Gi
+
+  retention: "7d"
+  retentionSize: "3GB"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+  service:
+    type: ClusterIP
+
+extraScrapeConfigs: |
+  - job_name: 'datacenter-api'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - 'datacenter-api.datacenter-app.svc.cluster.local:8080'
