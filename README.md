@@ -179,6 +179,47 @@ The policy was verified using an A/B test:
 This verifies that Kubernetes NetworkPolicy is actively restricting unnecessary outbound communication while preserving required application traffic.
 
 
+## Horizontal Pod Autoscaling
+
+Horizontal Pod Autoscaler (HPA) was configured for the `datacenter-api` Deployment using CPU utilization metrics provided by Kubernetes Metrics Server.
+
+The autoscaling configuration uses:
+
+- Minimum replicas: 2
+- Maximum replicas: 3
+- Target CPU utilization: 20%
+- CPU request per API Pod: 100m
+
+During the load test, CPU utilization increased above the configured target and HPA automatically scaled the API Deployment from 2 to 3 Pods.
+
+```text
+Normal Load
+2 Pods
+CPU ~11%
+    |
+    | CPU load generated
+    v
+High Load
+CPU > 20%
+    |
+    v
+HPA Scale-Out
+2 Pods -> 3 Pods
+    |
+    | load removed
+    v
+CPU utilization decreases
+    |
+    v
+HPA Scale-In
+3 Pods -> 2 Pods
+```
+
+During testing, CPU utilization reached approximately 334%, causing the Deployment to scale to 3 replicas. After the load ended and CPU utilization dropped below the target, HPA automatically returned the Deployment to 2 replicas.
+
+This verifies that the application can automatically adjust Pod capacity according to CPU utilization.
+
+
 ## Project Structure
 
 ```text
