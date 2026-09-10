@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datacenter-api-config      # FastAPI 일반 설정을 보관하는 ConfigMap 이름
+  namespace: datacenter-app        # FastAPI가 배포될 Namespace
+data:
+  DB_PORT: "3306"                  # RDS MySQL 접속 포트

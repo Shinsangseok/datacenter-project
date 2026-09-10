@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api                       # FastAPI Deployment 이름
+  namespace: datacenter-app                  # FastAPI 전용 Namespace
+spec:
+  replicas: 2                                # 부하분산 및 Self-Healing 테스트를 위해 Pod 2개 실행
+  selector:
+    matchLabels:
+      app: datacenter-api
+  template:
+    metadata:
+      labels:
+        app: datacenter-api
+    spec:
+      securityContext:
+        runAsNonRoot: true                    # root 사용자 실행 금지
+        runAsUser: 10001                      # Dockerfile의 appuser UID
+        runAsGroup: 10001
+      containers:
+        - name: datacenter-api
+          image: datacenter-api:1.1           # K3s containerd에 import한 이미지
+          imagePullPolicy: Never              # 외부 Registry가 아닌 로컬 이미지 사용
+
+          ports:
+            - containerPort: 8000             # FastAPI 내부 포트
+
+          envFrom:
+            - configMapRef:
+                name: datacenter-api-config   # DB_PORT 등 일반 설정
+            - secretRef:
+                name: datacenter-api-secret   # DB 접속 관련 민감 설정
+
+          securityContext:
+            allowPrivilegeEscalation: false   # 컨테이너 권한 상승 차단
+            capabilities:
+              drop:
+                - ALL                         # 불필요한 Linux capability 제거
+
+          readinessProbe:
+            httpGet:
+              path: /ready                    # RDS 연결까지 정상인지 확인
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health                   # FastAPI 프로세스 생존 여부 확인
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
