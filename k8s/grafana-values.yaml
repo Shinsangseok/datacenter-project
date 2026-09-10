@@ -1,0 +1,43 @@
+service:
+  type: ClusterIP
+
+persistence:
+  enabled: true
+  type: pvc
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 384Mi
+
+admin:
+  existingSecret: grafana-admin-secret
+  userKey: admin-user
+  passwordKey: admin-password
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        access: proxy
+        isDefault: true
+        editable: false
+
+grafana.ini:
+  plugins:
+    preinstall_auto_update: false
+
+imageRenderer:
+  enabled: true 
+  replicas: 1
