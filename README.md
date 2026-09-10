@@ -220,6 +220,46 @@ During testing, CPU utilization reached approximately 334%, causing the Deployme
 This verifies that the application can automatically adjust Pod capacity according to CPU utilization.
 
 
+## K3s Recovery Verification
+
+A K3s service restart test was performed to verify application recovery after a Kubernetes control-plane restart.
+
+The K3s service was manually restarted using `sudo systemctl restart k3s`.
+
+After the restart, the following components were verified:
+
+- K3s service returned to `active`
+- Kubernetes node returned to `Ready`
+- Two `datacenter-api` Pods remained available
+- Data Center Simulator remained operational
+- Prometheus and Grafana Pods were running
+- Grafana Image Renderer was running
+- HPA resumed CPU metric collection with 2 replicas
+- Simulator to FastAPI communication returned HTTP 200
+- Prometheus and Grafana systemd port-forward services returned to `active`
+- Simulator continued producing NORMAL / ANOMALY predictions
+- New measurement records continued to be stored in AWS RDS MySQL
+
+```text
+K3s Restart
+    |
+    v
+Node Ready
+    |
+    v
+Kubernetes Workloads Running
+    |
+    +--> Simulator -> FastAPI
+    +--> HPA / Metrics Server
+    +--> Prometheus / Grafana
+    +--> FastAPI -> AWS RDS
+```
+
+This test verifies service-level recovery of the single-node K3s environment after a K3s restart.
+
+Because the environment uses a single EC2 node, this should not be considered infrastructure-level High Availability. An EC2 instance failure would still cause the entire Kubernetes cluster to become unavailable.
+
+
 ## Project Structure
 
 ```text
