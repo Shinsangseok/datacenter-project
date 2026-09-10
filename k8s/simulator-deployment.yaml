@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-simulator
+  namespace: datacenter-sim
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datacenter-simulator
+  template:
+    metadata:
+      labels:
+        app: datacenter-simulator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+        - name: simulator
+          image: datacenter-simulator:1.0
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: datacenter-simulator-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
