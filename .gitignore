@@ -7,3 +7,8 @@ __pycache__/
 id_ed25519
 id_rsa
 .vscode/
+# Local backup files
+*.bak
+
+# Runtime logs
+logs/
