@@ -8,7 +8,7 @@ FastAPI 기반 추론 API를 K3s에 배포하고 Prometheus/Grafana로 상태를
 ## 전체 구성
 
 아래 두 흐름은 각각 **모니터링/이상 탐지**와 **생성형 AI 장애 분석**을 담당합니다.  
-Dify 장애 분석은 현재 별도의 self-hosted 워크플로우로 구성되어 있습니다.
+FastAPI가 저장된 측정값을 조회해 self-hosted Dify 워크플로우에 전달합니다.
 
 ```mermaid
 flowchart LR
@@ -28,11 +28,11 @@ flowchart LR
         PARSE --> ROUTE{"Severity<br/>Routing"}
         ROUTE --> HC["HIGH /<br/>CRITICAL"]
         ROUTE --> LM["LOW /<br/>MEDIUM"]
-        HC --> AGG["Aggregate<br/>Result"]
-        LM --> AGG
-        AGG --> BED["Amazon<br/>Bedrock"]
-        BED --> NOVA["Amazon<br/>Nova Pro"]
+        HC --> BED["Amazon Bedrock<br/>Nova Pro"]
+        LM --> BED
+        BED --> AGG["Aggregate<br/>Result"]
     end
+    API -->|POST /analysis/run| CTX
 ```
 
 애플리케이션과 모니터링 구성요소는 AWS EC2의 **single-node K3s** 환경에서 실행됩니다.
@@ -108,24 +108,30 @@ AWS 인증에는 **EC2 IAM Role + Instance Metadata Service(IMDS)**를 사용했
 - Bedrock 호출 권한을 최소 권한 IAM Policy로 제한
 - 승인한 APAC Nova Pro inference profile을 통한 호출만 허용
 
-### CRITICAL 테스트
+### FastAPI에서 분석 요청
 
-다음 조건을 입력해 `CRITICAL` 분석 경로로 분기되는 것을 확인했습니다.
-
-```text
-Server: server02
-Monitoring window: 30 minutes
-Samples: 180
-Anomalous samples: 63
-Anomaly rate: 35%
-Max CPU: 98.2%
-Max Memory: 96.1%
-Max Temperature: 91.4°C
+```bash
+curl -X POST http://localhost:8000/analysis/run \
+  -H 'Content-Type: application/json' \
+  -d '{"server_id":"server06","minutes":30,"anomaly_limit":5}'
 ```
 
-분석 결과에서는 180개 샘플 중 63개가 이상으로 탐지된 사실과 CPU, 메모리, 온도 측정값을 정리하고, 현재 데이터만으로 근본 원인을 확정하기 어려운 경우 이를 명시하도록 했습니다.
+주소는 실행 중인 FastAPI 주소로 바꿉니다. `{}`를 보내면 전체 서버의 최근 30분과 최근 이상 5건을 사용합니다.
+`GET /analysis/context`로 같은 조회 조건의 입력 데이터를 먼저 확인할 수 있습니다.
+
+- 성공: `status=succeeded`, `workflow_run_id`, `context`, `outputs.analysis_result`를 반환합니다. 분석 결과는 문자열입니다.
+- 데이터 없음: HTTP 200과 `status=skipped`, `reason=no_data`, `workflow_run_id=null`, `outputs=null`을 반환하며 Dify를 호출하지 않습니다.
+- 타임아웃: HTTP 504를 반환합니다. Workflow가 계속 실행될 수 있으므로 자동 재호출하지 말고 Dify 실행 상태부터 확인합니다.
+
+`/predict`는 분석을 자동 실행하지 않습니다. 분석은 위 POST 요청으로 실행합니다.
+
+2026-09-16에 K3s 배포 후 Pod 2개의 readiness와 `/analysis/context` HTTP 200을 확인했습니다.
+데이터가 있는 서버로 실제 Dify/Bedrock 연동을 1회 실행해 `succeeded`, 실행 ID, 비어 있지 않은 분석 문자열을 확인했습니다.
+기존 CRITICAL 경로 검증 결과는 아래 이미지에 정리했습니다.
 
 ![Dify CRITICAL Incident Analysis Result](docs/images/dify-critical-test-result.png)
+
+입력 제한, 오류 응답, 설정 및 롤백은 [FastAPI–Dify 연동 문서](docs/dify-fastapi-integration.md)를 참고하세요.
 
 ## Kubernetes에서 확인한 내용
 
