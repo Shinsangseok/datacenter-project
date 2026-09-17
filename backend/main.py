@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, generate_latest
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
+
+from backend.dify import run_analysis
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -266,6 +268,216 @@ def history(
         result.append(item)
 
     return result
+
+
+def build_analysis_context(
+    server_id: str | None,
+    minutes: int,
+    anomaly_limit: int,
+) -> dict:
+    now_utc = datetime.now(timezone.utc)
+    since_utc = now_utc - timedelta(minutes=minutes)
+
+    # MySQL DATETIME에는 현재 timezone 정보 없이 UTC로 저장하고 있으므로
+    # 조회 조건도 naive UTC datetime으로 맞춘다.
+    since_db = since_utc.replace(tzinfo=None)
+
+    filters = ["measured_at >= :since", "measured_at <= :until"]
+    params = {
+        "since": since_db,
+        "until": now_utc.replace(tzinfo=None),
+    }
+
+    if server_id:
+        filters.append("server_id = :server_id")
+        params["server_id"] = server_id
+
+    where_clause = " AND ".join(filters)
+
+    summary_sql = text(f"""
+        SELECT
+            COUNT(*) AS sample_count,
+
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN prediction = 'ANOMALY' THEN 1
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS anomaly_count,
+
+            AVG(cpu) AS avg_cpu,
+            MAX(cpu) AS max_cpu,
+
+            AVG(memory) AS avg_memory,
+            MAX(memory) AS max_memory,
+
+            AVG(temperature) AS avg_temperature,
+            MAX(temperature) AS max_temperature,
+
+            AVG(power) AS avg_power,
+            MAX(power) AS max_power,
+
+            MAX(measured_at) AS latest_measured_at
+
+        FROM measurements
+
+        WHERE {where_clause}
+    """)
+
+    recent_anomaly_sql = text(f"""
+        SELECT
+            id,
+            measured_at,
+            server_id,
+            cpu,
+            memory,
+            temperature,
+            power,
+            prediction,
+            probability
+
+        FROM measurements
+
+        WHERE {where_clause}
+          AND prediction = 'ANOMALY'
+
+        ORDER BY measured_at DESC, id DESC
+
+        LIMIT :anomaly_limit
+    """)
+
+    try:
+        with engine.connect() as connection:
+            summary = connection.execute(
+                summary_sql,
+                params,
+            ).mappings().one()
+
+            recent_rows = connection.execute(
+                recent_anomaly_sql,
+                {**params, "anomaly_limit": anomaly_limit},
+            ).mappings().all()
+
+    except SQLAlchemyError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="could not build analysis context",
+        ) from exc
+
+    sample_count = int(summary["sample_count"] or 0)
+    anomaly_count = int(summary["anomaly_count"] or 0)
+
+    if sample_count > 0:
+        anomaly_rate = anomaly_count / sample_count
+    else:
+        anomaly_rate = 0.0
+
+    def to_float(value):
+        if value is None:
+            return None
+
+        return round(float(value), 2)
+
+    recent_anomalies = []
+
+    for row in recent_rows:
+        recent_anomalies.append(
+            {
+                "measurement_id": int(row["id"]),
+                "measured_at": row["measured_at"].replace(tzinfo=timezone.utc).isoformat(),
+                "server_id": row["server_id"],
+                "cpu": float(row["cpu"]),
+                "memory": float(row["memory"]),
+                "temperature": float(row["temperature"]),
+                "power": float(row["power"]),
+                "prediction": row["prediction"],
+                "probability": float(row["probability"]),
+            }
+        )
+
+    latest_measured_at = summary["latest_measured_at"]
+
+    return {
+        "scope": {
+            "server_id": server_id or "ALL",
+            "window_minutes": minutes,
+            "since": since_utc.isoformat(),
+            "until": now_utc.isoformat(),
+        },
+
+        "summary": {
+            "has_data": sample_count > 0,
+            "sample_count": sample_count,
+            "anomaly_count": anomaly_count,
+            "anomaly_rate": anomaly_rate,
+
+            "avg_cpu": to_float(summary["avg_cpu"]),
+            "max_cpu": to_float(summary["max_cpu"]),
+
+            "avg_memory": to_float(summary["avg_memory"]),
+            "max_memory": to_float(summary["max_memory"]),
+
+            "avg_temperature": to_float(
+                summary["avg_temperature"]
+            ),
+            "max_temperature": to_float(
+                summary["max_temperature"]
+            ),
+
+            "avg_power": to_float(summary["avg_power"]),
+            "max_power": to_float(summary["max_power"]),
+
+            "latest_measured_at": (
+                latest_measured_at.replace(tzinfo=timezone.utc).isoformat()
+                if latest_measured_at
+                else None
+            ),
+        },
+
+        "recent_anomalies": recent_anomalies,
+    }
+
+
+@app.get("/analysis/context")
+def analysis_context(
+    server_id: str | None = None,
+    minutes: int = Query(
+        default=30,
+        ge=1,
+        le=1440,
+    ),
+    anomaly_limit: int = Query(
+        default=5,
+        ge=1,
+        le=20,
+    ),
+) -> dict:
+    return build_analysis_context(
+        server_id=server_id,
+        minutes=minutes,
+        anomaly_limit=anomaly_limit,
+    )
+
+
+class AnalysisRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    server_id: str | None = Field(default=None, min_length=1, max_length=32)
+    minutes: int = Field(default=30, ge=1, le=1440)
+    anomaly_limit: int = Field(default=5, ge=1, le=20)
+
+
+@app.post("/analysis/run")
+def analyze(request: AnalysisRequest) -> dict:
+    context = build_analysis_context(
+        server_id=request.server_id,
+        minutes=request.minutes,
+        anomaly_limit=request.anomaly_limit,
+    )
+    return run_analysis(context)
 
 
 @app.get("/metrics")
