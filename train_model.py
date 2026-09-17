@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import argparse
 import hashlib
 import io
 import os
@@ -48,7 +49,31 @@ def git_metadata():
         return {"git_commit_sha": "unknown", "git_dirty": "unknown"}
 
 
-def main():
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Train the synthetic datacenter classifier.")
+    parser.add_argument("--n-estimators", type=int, default=100)
+    parser.add_argument("--max-depth", type=int, default=10)
+    parser.add_argument("--class-weight", choices=("balanced", "balanced_subsample"), default="balanced")
+    parser.add_argument("--random-state", type=int, default=42)
+    parser.add_argument("--test-size", type=float, default=0.2)
+    parser.add_argument("--n-jobs", type=int, default=2,
+                        help="Nonzero integer; -1 uses all CPUs, other negatives follow joblib semantics.")
+    args = parser.parse_args(argv)
+    if args.n_estimators <= 0:
+        parser.error("--n-estimators must be greater than 0")
+    if args.max_depth <= 0:
+        parser.error("--max-depth must be greater than 0")
+    if not 0 < args.test_size < 1:
+        parser.error("--test-size must be between 0 and 1 (exclusive)")
+    if args.n_jobs == 0:
+        parser.error("--n-jobs must be a nonzero integer")
+    if not 0 <= args.random_state <= 2**32 - 1:
+        parser.error("--random-state must be between 0 and 2**32 - 1")
+    return args
+
+
+def main(argv=None):
+    args = parse_args(argv)
     tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "").strip()
     if not tracking_uri:
         raise RuntimeError("Set MLFLOW_TRACKING_URI before training.")
@@ -63,7 +88,7 @@ def main():
     X = df[features]
     y = df["label"]
 
-    test_size = 0.2
+    test_size = args.test_size
     tags = {
         "synthetic_data": "true",
         "dataset_path": dataset_path.as_posix(),
@@ -81,16 +106,16 @@ def main():
             y,
             test_size=test_size,
             stratify=y,
-            random_state=42,
+            random_state=args.random_state,
         )
 
         # 테스트 데이터는 학습에 사용하지 않음
         model = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=10,
-            class_weight="balanced",
-            random_state=42,
-            n_jobs=2,
+            n_estimators=args.n_estimators,
+            max_depth=args.max_depth,
+            class_weight=args.class_weight,
+            random_state=args.random_state,
+            n_jobs=args.n_jobs,
         )
         mlflow.log_params({
             **{key: model.get_params()[key] for key in (

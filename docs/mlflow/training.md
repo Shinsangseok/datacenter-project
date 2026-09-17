@@ -17,8 +17,8 @@ The experiment is `datacenter-anomaly-detection`. Each invocation creates one ru
 a missing tracking URI fails before training rather than silently using a local
 store. Importing the module does not start training or create a run.
 
-The input, feature order, stratified 80:20 split and RandomForest parameters are
-unchanged. Local outputs remain `models/model.pkl`, `reports/metrics.json` and
+Without arguments, the input, feature order, stratified 80:20 split and
+RandomForest parameters are unchanged. Local outputs remain `models/model.pkl`, `reports/metrics.json` and
 `reports/confusion_matrix.png`. Every run uploads these same three files under
 `models/` and `reports/` within its own artifact directory.
 
@@ -33,3 +33,28 @@ before validation. Earlier MLflow runs retain their independent artifacts. A
 tracking/upload error fails the invocation; a failed run may still have local
 outputs. Training does not deploy the model to FastAPI, register models, call
 Dify/Bedrock, or change Kubernetes resources.
+
+## CLI parameters
+
+| Argument | Default | Accepted values |
+| --- | --- | --- |
+| `--n-estimators` | 100 | Positive integer |
+| `--max-depth` | 10 | Positive integer |
+| `--class-weight` | balanced | `balanced`, `balanced_subsample` |
+| `--random-state` | 42 | Integer in [0, 2**32 - 1]; shared by split and model |
+| `--test-size` | 0.2 | Float strictly between 0 and 1 |
+| `--n-jobs` | 2 | Nonzero integer; -1 uses all CPUs, -2 all but one, etc. |
+
+Arguments are validated before contacting MLflow or training. Extremely small or
+large test fractions can still fail sklearn's stratified split requirements for
+the actual dataset. Feature order, target, positive label, input/output paths and
+experiment name remain fixed. MLflow records the actual model/split parameters.
+
+```sh
+.venv/bin/python train_model.py --help
+.venv/bin/python train_model.py --max-depth 6
+```
+
+Both commands use the same environment-based tracking configuration. A training
+run with different arguments overwrites the local output files; each MLflow run
+keeps its own artifacts. This change does not implement MLflow Projects.
