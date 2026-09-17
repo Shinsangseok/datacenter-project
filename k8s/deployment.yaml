@@ -19,7 +19,7 @@ spec:
         runAsGroup: 10001
       containers:
         - name: datacenter-api
-          image: datacenter-api:1.3-dify-20260916           # K3s containerd에 import한 이미지
+          image: datacenter-api:1.4-dify-validation-20260917           # K3s containerd에 import한 이미지
           imagePullPolicy: Never              # 외부 Registry가 아닌 로컬 이미지 사용
 
           ports:

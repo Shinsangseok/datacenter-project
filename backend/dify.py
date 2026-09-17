@@ -17,8 +17,10 @@ def run_analysis(context: dict) -> dict:
     key = os.getenv('DIFY_API_KEY', '')
     try:
         url = urlsplit(base_url)
+        port = url.port  # Access validates nonnumeric and out-of-range ports.
         timeout = float(os.getenv('DIFY_TIMEOUT_SECONDS', '120'))
         valid = (url.scheme in ('http', 'https') and url.hostname
+                 and port != 0 and not url.netloc.endswith(':')
                  and not url.username and not url.password
                  and not url.query and not url.fragment
                  and math.isfinite(timeout) and 0 < timeout <= 300
@@ -42,6 +44,8 @@ def run_analysis(context: dict) -> dict:
             if response.status_code in (401, 403):
                 raise HTTPException(502, 'Dify authentication failed')
             response.raise_for_status()
+    except httpx.InvalidURL:
+        raise HTTPException(503, 'Dify configuration unavailable') from None
     except httpx.TimeoutException:
         raise HTTPException(504, 'Dify request timed out; execution may still be running') from None
     except httpx.HTTPError:
@@ -56,6 +60,9 @@ def run_analysis(context: dict) -> dict:
         run_id = payload['workflow_run_id']
         if not isinstance(outputs, dict) or not isinstance(run_id, str) or not run_id:
             raise ValueError('invalid workflow response')
+        analysis_result = outputs.get('analysis_result')
+        if not isinstance(analysis_result, str) or not analysis_result.strip():
+            raise ValueError('invalid analysis result')
     except (ValueError, KeyError, TypeError):
         raise HTTPException(502, 'Dify returned an invalid response') from None
     return {'status': 'succeeded', 'context': context,

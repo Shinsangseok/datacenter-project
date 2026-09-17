@@ -36,10 +36,14 @@ class DifyTests(unittest.TestCase):
             return run_analysis(self.context)
 
     def test_success_payload_and_outputs(self):
-        outputs = {'custom_result': {'text': '분석'}}
+        outputs = {'analysis_result': '  분석 결과\n', 'custom_result': {'text': '분석'}}
         result = self.run_mock(payload={'workflow_run_id': 'run1',
                               'data': {'status': 'succeeded', 'outputs': outputs}})
         self.assertEqual(result['outputs'], outputs)
+        self.assertEqual(result['status'], 'succeeded')
+        self.assertEqual(result['workflow_run_id'], 'run1')
+        self.assertEqual(result['context'], self.context)
+        self.assertIsInstance(result['outputs']['analysis_result'], str)
         request = self.calls[0]
         self.assertEqual(str(request.url), 'http://dify.test/v1/workflows/run')
         body = json.loads(request.content)
@@ -47,6 +51,55 @@ class DifyTests(unittest.TestCase):
         self.assertEqual(body['response_mode'], 'blocking')
         self.assertEqual(request.headers['Authorization'], 'Bearer test-only-key')
         self.assertEqual(len(self.calls), 1)
+
+    def test_invalid_analysis_results(self):
+        for outputs in [{}, {'analysis_result': ''}, {'analysis_result': ' \t\n'},
+                        {'analysis_result': None}, {'analysis_result': 123},
+                        {'analysis_result': 1.5}, {'analysis_result': False},
+                        {'analysis_result': {}}, {'analysis_result': []}]:
+            with self.subTest(outputs=outputs), self.assertRaises(HTTPException) as caught:
+                self.run_mock(payload={'workflow_run_id': 'run1',
+                              'data': {'status': 'succeeded', 'outputs': outputs}})
+            self.assertEqual(caught.exception.status_code, 502)
+            self.assertEqual(caught.exception.detail, 'Dify returned an invalid response')
+
+    def test_invalid_ports_are_configuration_errors(self):
+        for port in ['abc', '65536', '-1', '0', '']:
+            with self.subTest(port=port), patch.dict(os.environ, {
+                'DIFY_BASE_URL': f'http://dify.test:{port}/v1',
+            }), patch('backend.dify.httpx.Client') as client:
+                with self.assertRaises(HTTPException) as caught:
+                    run_analysis(self.context)
+                self.assertEqual(caught.exception.status_code, 503)
+                self.assertEqual(caught.exception.detail, 'Dify configuration unavailable')
+                client.assert_not_called()
+
+    def test_valid_explicit_port(self):
+        with patch.dict(os.environ, {'DIFY_BASE_URL': 'http://dify.test:8080/v1'}):
+            result = self.run_mock(payload={'workflow_run_id': 'run1',
+                                  'data': {'status': 'succeeded',
+                                           'outputs': {'analysis_result': '분석'}}})
+        self.assertEqual(result['outputs']['analysis_result'], '분석')
+        self.assertEqual(str(self.calls[0].url), 'http://dify.test:8080/v1/workflows/run')
+
+    def test_invalid_url_is_configuration_error(self):
+        # urlsplit accepts DEL; HTTPX rejects it before sending a request.
+        with patch.dict(os.environ, {'DIFY_BASE_URL': 'http://dify.test/v1\x7f'}):
+            with self.assertRaises(HTTPException) as caught:
+                self.run_mock()
+        self.assertEqual(caught.exception.status_code, 503)
+        self.assertEqual(caught.exception.detail, 'Dify configuration unavailable')
+        self.assertEqual(self.calls, [])
+
+    def test_invalid_url_exception_is_sanitized(self):
+        with patch('backend.dify.httpx.Client') as client:
+            client.return_value.__enter__.return_value.post.side_effect = httpx.InvalidURL(
+                'private upstream detail')
+            with self.assertRaises(HTTPException) as caught:
+                run_analysis(self.context)
+        self.assertEqual(caught.exception.status_code, 503)
+        self.assertEqual(caught.exception.detail, 'Dify configuration unavailable')
+        client.return_value.__enter__.return_value.post.assert_called_once()
 
     def test_zero_samples_skips_without_config_or_client(self):
         with patch.dict(os.environ, {}, clear=True), patch('backend.dify.httpx.Client') as client:
