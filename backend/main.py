@@ -3,7 +3,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import quote_plus
 
-import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
@@ -12,6 +11,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from backend.dify import run_analysis
+from backend.model_loader import load_model
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -34,7 +34,7 @@ engine = create_engine(
     pool_recycle=1800,
 )
 
-model = joblib.load(MODEL_PATH)
+model = load_model(MODEL_PATH)
 
 prediction_counter = Counter(
     "datacenter_predictions_total",
