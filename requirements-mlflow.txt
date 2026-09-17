@@ -1,0 +1,3 @@
+# MLflow tracking and training dependencies; FastAPI uses requirements.txt.
+-r requirements.txt
+mlflow==3.16.1
