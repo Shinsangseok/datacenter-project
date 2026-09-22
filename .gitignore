@@ -12,3 +12,6 @@ id_rsa
 
 # Runtime logs
 logs/
+
+# Environment-specific deployment configuration
+/.local/

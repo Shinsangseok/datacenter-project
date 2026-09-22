@@ -5,7 +5,7 @@ metadata:
   namespace: datacenter-app        # FastAPI가 배포될 Namespace
 data:
   DB_PORT: "3306"                  # RDS MySQL 접속 포트
-  DIFY_BASE_URL: "http://172.31.51.253/v1"  # 내부망 연동 검증용 Service API
+  DIFY_BASE_URL: ""  # 배포 전 Git에서 제외된 .local/configmap.yaml에 환경별 URL 설정
   DIFY_TIMEOUT_SECONDS: "120"
   MODEL_SOURCE: "registry"
   MLFLOW_MODEL_NAME: "datacenter-anomaly-detector"

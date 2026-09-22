@@ -4,7 +4,7 @@
 
 ## 확인한 계약
 
-인증된 `GET http://172.31.51.253/v1/parameters`에서 필수 입력
+인증된 `GET http://<dify-private-endpoint>/v1/parameters`에서 필수 입력
 `incident_context`의 타입이 `paragraph`임을 확인했다.
 `POST /analysis/run`은 `GET /analysis/context`와 같은 컨텍스트 생성 함수를 사용하고,
 결과를 JSON 문자열로 변환해 `inputs.incident_context`로 전달한다.
@@ -36,12 +36,35 @@ CRITICAL로 분류한다. 두 심각도는 상세 분석 경로로, 나머지는
 
 ## 환경변수
 
-- ConfigMap `datacenter-api-config`: `DIFY_BASE_URL=http://172.31.51.253/v1`,
+- ConfigMap `datacenter-api-config`: `DIFY_BASE_URL=http://<dify-private-endpoint>/v1`,
   `DIFY_TIMEOUT_SECONDS=120` (HTTP 작업 timeout, 총 실행 시간 상한은 아님).
 - 기존 Secret `datacenter-app/dify-api-secret`: `DIFY_API_KEY`.
   Deployment에서 `secretKeyRef`로 주입한다.
 - HTTP 연결 timeout은 5초이며 자동 redirect와 환경변수 proxy를 사용하지 않는다.
 - 키와 upstream 오류 본문은 로그 및 오류 응답에 포함하지 않는다.
+
+## 환경별 URL 설정
+
+`DIFY_BASE_URL`은 credential이 아닌 일반 설정이므로 ConfigMap을 유지한다.
+공개용 `k8s/configmap.yaml`에는 실제 내부 주소를 넣지 않고 빈 값으로 둔다.
+문서의 `http://<dify-private-endpoint>/v1`은 예시이며 그대로 사용할 URL이 아니다.
+`DIFY_API_KEY`는 기존 Secret 참조를 그대로 사용한다.
+
+배포를 준비할 때만 공개용 manifest를 로컬 설정 파일로 복사한다.
+
+```bash
+mkdir -p .local
+cp k8s/configmap.yaml .local/configmap.yaml
+```
+
+`.local/configmap.yaml`의 `DIFY_BASE_URL`을 해당 환경의 `/v1` URL로 채우고
+다른 설정도 검토한다. `.local/`은 Git 추적과 Docker build context에서 제외한다.
+공개용 manifest의 빈 값을 현재 운영 ConfigMap에 그대로 적용하지 않는다.
+실제 적용은 별도로 승인된 배포 절차에서 로컬 설정 파일을 명시하여 수행한다.
+
+URL이 비어 있으면 데이터가 있는 분석 요청은 기존 코드에서 HTTP 503으로
+종료되며 Dify에 요청하지 않는다. 데이터가 없는 요청의 `skipped` 동작은 유지된다.
+이 공개용 설정 변경은 실행 중인 Kubernetes 리소스나 실제 Dify 주소를 변경하지 않는다.
 
 ## 로컬 검증
 
