@@ -64,10 +64,16 @@ def _load_registry():
 
     name = os.environ.get("MLFLOW_MODEL_NAME", MODEL_NAME)
     version = os.environ.get("MLFLOW_MODEL_VERSION", MODEL_VERSION)
-    uri = os.environ.get("MLFLOW_TRACKING_URI", TRACKING_URI)
+    environment = os.environ.get("MLFLOW_ENV", "prod")
+    if environment not in {"prod", "dev"}:
+        raise ModelLoadError("Unknown MLflow environment")
+    expected_uri = (TRACKING_URI if environment == "prod" else
+                    "http://mlflow.mlflow-dev.svc.cluster.local:5000")
+    # DEV must be explicitly configured; never fall back to the PROD service.
+    uri = os.environ.get("MLFLOW_TRACKING_URI", TRACKING_URI if environment == "prod" else "")
     if name != MODEL_NAME or version != MODEL_VERSION:
         raise ModelLoadError("Only datacenter-anomaly-detector Version 1 is approved")
-    if uri != TRACKING_URI:
+    if uri != expected_uri:
         raise ModelLoadError("Registry requires the internal MLflow Service URI")
     # The models:/ resolver creates an internal client using fluent URI state.
     # Set both explicitly so it cannot initialize the default local SQL store.

@@ -1,46 +1,23 @@
 """Start pinned MLflow using a runtime-only URI kept out of argv and logs."""
 import os
-import re
 import signal
 import subprocess
 import sys
-from urllib.parse import quote, quote_plus
-
-
-def redact(line, values):
-    line = re.sub(r"mysql(?:\+pymysql)?://[^\s\"']+", "[REDACTED_DB_URI]", line)
-    for value in sorted(set(values), key=len, reverse=True):
-        if value:
-            line = line.replace(value, "[REDACTED]")
-    return line
+from db_target import mysql_uri, redact, require, sensitive_values, tracking_connection, verify_tracking
 
 
 def main():
-    from sqlalchemy import URL, create_engine, text
+    from sqlalchemy import create_engine
     import mlflow
 
-    assert mlflow.__version__ == "3.16.1"
-    assert os.environ["DB_NAME"] == "mlflow"
-    assert os.environ["DB_PORT"] == "3306"
-    ca = os.environ["MLFLOW_MYSQL_SSL_CA"]
-    url = URL.create(
-        "mysql+pymysql", username=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"], host=os.environ["DB_HOST"],
-        port=3306, database="mlflow",
-        query={"ssl_verify_cert": "true", "ssl_verify_identity": "true"},
-    )
-    # Fail closed before MLflow can initialize an empty/wrong database.
-    engine = create_engine(url, hide_parameters=True, connect_args={"ssl_ca": ca})
-    with engine.connect() as conn:
-        assert conn.execute(text("SELECT DATABASE()")).scalar_one() == "mlflow"
-        assert conn.execute(text("SHOW SESSION STATUS LIKE 'Ssl_cipher'")).one()[1]
-        assert conn.execute(text("SELECT version_num FROM mlflow.alembic_version")).scalar_one() == "b7e2c1a4d9f3"
-        assert conn.execute(text("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='mlflow'")).scalar_one() == 59
-    engine.dispose()
+    require(mlflow.__version__ == "3.16.1")
+    connection = tracking_connection(os.environ)
+    url = mysql_uri(connection, os.environ["MLFLOW_MYSQL_SSL_CA"])
+    # No migration/initialization here: verify the selected schema before startup.
+    verify_tracking(create_engine(url, hide_parameters=True), connection["database"])
     env = os.environ.copy()
-    env["MLFLOW_BACKEND_STORE_URI"] = url.render_as_string(hide_password=False)
-    values = [env[k] for k in ("DB_USER", "DB_PASSWORD", "DB_HOST", "MLFLOW_BACKEND_STORE_URI")]
-    values += [encode(v, safe="") for v in values[:] for encode in (quote, quote_plus)]
+    env["MLFLOW_BACKEND_STORE_URI"] = url
+    values = sensitive_values(env)
     command = [
         sys.executable, "-m", "mlflow", "server", "--host", "0.0.0.0",
         "--port", "5000", "--workers", "1", "--serve-artifacts",

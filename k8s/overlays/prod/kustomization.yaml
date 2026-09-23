@@ -1,0 +1,6 @@
+# Preserve existing PROD names, namespaces, selectors, images and HPA settings.
+# Rendering this draft is permitted; deployment needs separate approval.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base

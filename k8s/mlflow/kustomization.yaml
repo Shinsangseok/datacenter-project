@@ -7,3 +7,4 @@ configMapGenerator:
   - name: mlflow-launcher
     files:
       - launcher.py
+      - db_target.py

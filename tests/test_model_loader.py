@@ -74,6 +74,25 @@ with patch('backend.model_loader._load_registry', side_effect=RuntimeError('priv
                 with self.assertRaises(loader.ModelLoadError):loader._load_registry()
                 client.assert_not_called()
 
+    def test_dev_registry_uses_only_dev_uri(self):
+        uri = 'http://mlflow.mlflow-dev.svc.cluster.local:5000'
+        with patch.dict(os.environ, {'MLFLOW_ENV': 'dev', 'MLFLOW_TRACKING_URI': uri}), patch('mlflow.MlflowClient') as client, patch('mlflow.artifacts.download_artifacts', return_value='/tmp/package') as download, patch.object(loader, '_load_package', return_value='registry'):
+            client.return_value.get_model_version.return_value = SimpleNamespace(status='READY', version='1', source='mlflow-artifacts:/run/model')
+            self.assertEqual(loader._load_registry(), 'registry')
+            client.assert_called_once_with(tracking_uri=uri, registry_uri=uri)
+            self.assertEqual(download.call_args.kwargs['registry_uri'], uri)
+
+    def test_cross_environment_and_missing_dev_uri_fail_before_lookup(self):
+        cases = [{'MLFLOW_ENV': 'dev'},
+                 {'MLFLOW_ENV': 'dev', 'MLFLOW_TRACKING_URI': loader.TRACKING_URI},
+                 {'MLFLOW_ENV': 'prod', 'MLFLOW_TRACKING_URI': 'http://mlflow.mlflow-dev.svc.cluster.local:5000'},
+                 {'MLFLOW_ENV': 'unknown'}]
+        for config in cases:
+            with self.subTest(config=config), patch.dict(os.environ, {'MODEL_SOURCE': 'registry', **config}, clear=True), patch('mlflow.MlflowClient') as client, patch.object(loader.joblib, 'load') as local:
+                with self.assertRaises(loader.ModelLoadError): loader.load_model('unused')
+                client.assert_not_called()
+                local.assert_not_called()
+
     def model(self):
         m=RandomForestClassifier()
         m.feature_names_in_=np.array(loader.FEATURES)

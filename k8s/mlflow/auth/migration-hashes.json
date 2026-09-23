@@ -1,0 +1,13 @@
+{
+  "alembic.ini": "cf6f62260aa0035f33fb0b61fdf0f99ab34e37c05081aa48a4c511ff94847b34",
+  "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "env.py": "835fa5d236de43807c25f45bfa8d3e29cebf4646ab213a6372d6950bf8008e32",
+  "versions/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "versions/a1b2c3d4e5f6_add_gateway_permissions.py": "01b290825f9614d9ea0fd092168b122b25c2554ff5a9b6abd4011639bbac1d12",
+  "versions/c3d4e5f6a7b8_add_rbac_tables.py": "b758e9941e0d20e3de97bc8a0d2c2ba1614feaee4fff7c28220ef97a2664c36d",
+  "versions/f1a2b3c4d5e6_promote_prompt_resource_type.py": "e2e35205e91c44d70ae67976b4571c8baf2da26e4c16c408357cfa098b9f5344",
+  "versions/8606fa83a998_initial_migration.py": "b97db9c2531ec0621f4c2dba4d5c93faa4cbe220e0d39ae6a044595309984462",
+  "versions/0965eb92f5f0_add_scorer_permissions.py": "b1c91d1f147dad4ef549aa6e390e0ae8d999f26c4b82eb2522fce9ec0ca30c25",
+  "versions/2ed73881770d_workspace_permissions.py": "ef553cbec83e06fb7966fd3677b66feb08321ae48794c8e9b6550fc10793bf47",
+  "versions/e5f6a7b8c9d0_migrate_permissions_to_roles.py": "85ea01a91f156c5ef00c84082c5c2f9720f84c2e60f624fcb5a39027b687c8be"
+}

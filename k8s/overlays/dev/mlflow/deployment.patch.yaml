@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  namespace: mlflow
+spec:
+  template:
+    spec:
+      containers:
+        - name: mlflow
+          env:
+            # Independent approval inputs; never infer them from DB_HOST/DB_USER.
+            - name: MLFLOW_EXPECTED_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-target-policy
+                  key: MLFLOW_EXPECTED_DB_HOST
+            - name: MLFLOW_EXPECTED_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-target-policy
+                  key: MLFLOW_EXPECTED_DB_USER

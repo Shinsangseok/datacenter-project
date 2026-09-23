@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datacenter-api-config
+  namespace: datacenter-app
+data:
+  MLFLOW_ENV: dev
+  DB_NAME: datacenter_app_dev
+  MLFLOW_TRACKING_URI: http://mlflow.mlflow-dev.svc.cluster.local:5000
+  DIFY_BASE_URL: ""

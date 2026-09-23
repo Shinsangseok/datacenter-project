@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlflow-config
+  namespace: mlflow
+data:
+  MLFLOW_ENV: dev
+  DB_NAME: mlflow_tracking_dev
+  MLFLOW_EXPECTED_DB_NAME: mlflow_tracking_dev
+  MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow:5000,mlflow.mlflow-dev:5000,mlflow.mlflow-dev.svc:5000,mlflow.mlflow-dev.svc.cluster.local:5000,localhost:5000,127.0.0.1:5000"

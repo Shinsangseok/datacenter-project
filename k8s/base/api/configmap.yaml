@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datacenter-api-config      # FastAPI 일반 설정을 보관하는 ConfigMap 이름
+  namespace: datacenter-app        # FastAPI가 배포될 Namespace
+data:
+  DB_PORT: "3306"                  # RDS MySQL 접속 포트
+  DIFY_BASE_URL: ""  # 배포 전 Git에서 제외된 .local/configmap.yaml에 환경별 URL 설정
+  DIFY_TIMEOUT_SECONDS: "120"
+  MODEL_SOURCE: "registry"
+  MLFLOW_MODEL_NAME: "datacenter-anomaly-detector"
+  MLFLOW_MODEL_VERSION: "1"
+  MLFLOW_TRACKING_URI: "http://mlflow.mlflow.svc.cluster.local:5000"
+  MLFLOW_HTTP_REQUEST_TIMEOUT: "10"
+  MLFLOW_HTTP_REQUEST_MAX_RETRIES: "2"
