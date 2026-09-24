@@ -1,0 +1,8 @@
+{
+  "mode": "development",
+  "expected_database": "mlflow_auth_dev",
+  "expected_head": "f1a2b3c4d5e6",
+  "tls_required": true,
+  "ca_file": "/etc/mlflow/certs/global-bundle.pem",
+  "allow_empty": true
+}

@@ -1,0 +1,112 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mlflow-auth-bootstrap-v1
+  namespace: mlflow-dev
+spec:
+  suspend: true
+  parallelism: 1
+  completions: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: bootstrap
+        image: docker.io/library/mlflow-auth-readiness:3.16.1-reviewed@sha256:076a69736001ea886c9ce06d8bda3d6626ea85d3dcfaf66c933598d817754115
+        command:
+        - python
+        - -B
+        - /opt/mlflow/auth/bootstrap_admin.py
+        env:
+        - name: EXECUTOR_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: PYTHONDONTWRITEBYTECODE
+          value: '1'
+        - name: MLFLOW_AUTH_ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-auth-server
+              key: MLFLOW_AUTH_ADMIN_USERNAME
+        - name: MLFLOW_AUTH_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-auth-bootstrap
+              key: MLFLOW_AUTH_ADMIN_PASSWORD
+        - name: MLFLOW_ENV
+          value: dev
+        - name: MLFLOW_EXPECTED_AUTH_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_AUTH_HOST
+        - name: MLFLOW_EXPECTED_AUTH_USER
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_AUTH_RUNTIME_USER
+        volumeMounts:
+        - name: auth-code
+          mountPath: /opt/mlflow/auth
+          readOnly: true
+        - name: auth-policy
+          mountPath: /etc/mlflow-auth/policy
+          readOnly: true
+        - name: auth-db
+          mountPath: /etc/mlflow-auth/db
+          readOnly: true
+        - name: ca
+          mountPath: /etc/mlflow/certs
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+        - name: run
+          mountPath: /run/mlflow-auth
+        - name: launcher
+          mountPath: /opt/mlflow
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: auth-code
+        configMap:
+          name: mlflow-auth-code
+      - name: auth-policy
+        configMap:
+          name: mlflow-auth-policy
+      - name: auth-db
+        secret:
+          secretName: mlflow-auth-runtime-db
+          defaultMode: 288
+      - name: ca
+        configMap:
+          name: mlflow-rds-ca
+      - name: tmp
+        emptyDir: {}
+      - name: run
+        emptyDir:
+          medium: Memory
+      - name: launcher
+        configMap:
+          name: mlflow-launcher

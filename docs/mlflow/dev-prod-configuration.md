@@ -6,10 +6,10 @@
 
 - 기존 PROD: `datacenter-app` / `mlflow`. Deployment/Service/PVC 이름, namespace, selector, image, HPA 설정 유지.
 - 새 DEV: `datacenter-app-dev` / `mlflow-dev`.
-- 기존 RDS 한 대에 `mlflow_tracking_dev`, `mlflow_auth_dev`, `datacenter_app_dev`를 별도로 준비할 계획이다. 코드가 DB를 생성하지 않는다.
-- `backend/main.py`는 변경하지 않았다. 시작 시 measurements CREATE를 수행하므로 DEV app DB/계정을 별도로 준비해야 한다.
-- 새 overlay는 **provisioning 및 Auth 배포가 완료된 manifest가 아니다**. NetworkPolicy/Quota/RBAC, 필요한 namespace/CA/Secret, Tracking schema/Registry V1, reviewed Auth image 및 migration/bootstrap Job wiring이 다음 단계에 필요하다.
-- 현재 DEV MLflow overlay는 공통 Tracking launcher를 렌더링하며 Auth를 자동 활성화하지 않는다. Auth 소스는 `k8s/mlflow/auth/`에 준비했다. 별도 검토 후 해당 server/migration/bootstrap 진입점과 Secret·policy mount를 연결해야 한다.
+- DEV 대상은 `mlflow_tracking_dev`, `mlflow_auth_dev`, `datacenter_app_dev`다. 이번 작업은 live 상태를 조회하거나 DB를 생성하지 않는다.
+- `backend/main.py` startup은 measurements 컬럼을 SELECT/LIMIT 0으로 검증하며 DDL을 수행하지 않는다. 누락된 schema는 시작 실패로 처리한다. DEV 전용 one-shot 도구는 `backend/initialize_schema.py`로 분리했다.
+- overlay는 로컬 구성 준비 상태이며 배포 완료 증거가 아니다. NetworkPolicy/Quota/RBAC, 외부 Secret 및 이미지 가용성, Tracking schema/Registry V1은 별도 운영 검증이 필요하다. RDS 공개 CA ConfigMap과 Auth Job wiring은 DEV에 포함했다.
+- DEV MLflow Deployment는 `auth_server.py`를 사용한다. migration/bootstrap Job은 모두 `suspend: true`, `backoffLimit: 0`, `restartPolicy: Never`, parallelism/completions 1, deadline 300초다. 렌더링은 실행이 아니다. 실패 후 자동 retry/reconnect를 추가하지 않았으며 재개는 별도 승인과 checkpoint 검토가 필요하다.
 - DEV API의 image tag `dev-candidate-not-built`는 의도적인 미빌드 표시다. 기존 PROD image에는 DEV loader 변경이 없으므로 이를 그대로 DEV에 배포하지 않는다. 다음 단계에서 단 한 번 빌드한 artifact의 digest로 치환한다.
 - DEV API는 별도 MLflow client Secret을 요구하고 PROD Dify credential을 참조하지 않는다. PROD Dify 설정/credential은 변경하지 않는다.
 
@@ -56,7 +56,7 @@ DEV policy는 `mode=development`, `expected_database=mlflow_auth_dev`, `expected
 
 PROD의 기존 `mode=production` policy와 Secret 형식은 계속 지원한다. 새 명시적 `MLFLOW_ENV=prod` 사용 시 Auth expected host/user를 필수로 요구한다. DEV DB 또는 Tracking DB를 Auth 대상으로 선택하면 거부한다.
 
-스크립트 배포 시 `db_target.py`가 `auth/`의 부모 디렉터리에 위치하도록 같은 artifact에 함께 포함한다. 예: `/opt/mlflow/db_target.py`, `/opt/mlflow/auth/auth_server.py`. migration hash 파일도 auth/에 함께 둔다. policy·Secret은 코드 artifact에 bake하지 않는다. 실제 image build/Job mount는 다음 단계이며 stock MLflow image에 reviewed migration patches가 있다고 가정하지 않는다.
+스크립트 배포 시 `db_target.py`가 `auth/`의 부모 디렉터리에 위치하도록 같은 artifact에 함께 포함한다. 예: `/opt/mlflow/db_target.py`, `/opt/mlflow/auth/auth_server.py`. migration hash 파일도 auth/에 함께 둔다. policy·Secret은 코드 artifact에 bake하지 않는다. DEV server와 Job은 같은 기존 reviewed image digest를 참조하고 Auth code/공통 db_target/policy/CA를 mount한다. 이미지의 실제 가용성은 이번 작업에서 조회하거나 검증하지 않았다. stock MLflow image에 reviewed migration patches가 있다고 가정하지 않는다.
 
 ## FastAPI loader
 
@@ -88,14 +88,39 @@ MLFLOW_DISABLE_AGENT_HINT=1 .venv/bin/python -m unittest discover -s tests -v
 git diff --check
 ```
 
-## 다음 승인된 DEV provisioning 작업
+## 계정 및 Secret 계약
 
-1. PROD 가용성과 공유 노드/RDS 여유 확인. DEV quota/network/RBAC 계획 확정. HPA 수동 고정 금지.
-2. DEV namespace 2개 및 현재 RDS 내부의 새 DB 3개를 별도 단계에서 생성. 기존 partial/lab DB 보존.
-3. DEV 전용 least-privilege 계정, 승인 target 입력, CA 및 Secret을 안전한 외부 경로에서 준비. 실제 값 Git 기록 금지.
-4. reviewed Auth 의존성/patch와 새 launcher/loader 코드를 포함한 artifact를 한 번 빌드하고 digest/hash 기록. Auth Job/server 배포 wiring을 검토하고 동일 artifact로 실행.
-5. DEV Tracking schema, artifact PVC, 고정 Registry V1 fixture 준비. DB/계정/서비스의 PROD 접근 차단 확인.
-6. 새 DEV Auth empty baseline → fenced migration → head/fingerprint → bootstrap/RBAC → migration lock/session0/revoke.
-7. DEV Auth/Registry/artifact/FastAPI 정상·오류 경로 및 backup/rollback 검증. DEV PASS와 수동 승인 전 PROD DB/account/Secret 준비·promotion 금지.
+실제 현재 DEV 계정 5개는 기존 이름을 그대로 유지한다. 이번 작업에 DB account rename/drop/recreate는 없다. 승인 host/user는 접속 Secret에서 자동 추론하지 않고 독립 policy Secret으로 전달한다. 다음 표는 **향후 표준으로 전환이 필요하다는 기록만**이며 현재 계정명 또는 생성 지시가 아니다.
+
+| 역할 | 향후 표준 계정명 |
+|---|---|
+| Tracking runtime | mlflow_app_dev |
+| Tracking migration | mlflow_migration_dev |
+| Auth runtime | mlflow_auth_app_dev |
+| Auth migration | mlflow_auth_migration_dev |
+| API runtime | datacenter_app_dev |
+
+- `mlflow-dev/mlflow-target-policy`: `MLFLOW_EXPECTED_DB_HOST`, `MLFLOW_EXPECTED_DB_USER`, `MLFLOW_EXPECTED_AUTH_HOST`, `MLFLOW_EXPECTED_AUTH_MIGRATION_USER`, `MLFLOW_EXPECTED_AUTH_RUNTIME_USER`. 값에는 승인된 **기존** 계정명을 사용한다. `secret-contracts.json`은 값 없는 계약 문서이며 Secret 생성기가 아니다.
+- Tracking 접속: `mlflow-runtime-db`의 DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD.
+- Auth 접속: `mlflow-auth-runtime-db`, `mlflow-auth-migration-db` 각각의 `connection.json`에 host/port/database/username/password.
+- `mlflow-auth-server`: MLFLOW_AUTH_ADMIN_USERNAME, MLFLOW_FLASK_SERVER_SECRET_KEY. bootstrap password는 별도 `mlflow-auth-bootstrap`의 MLFLOW_AUTH_ADMIN_PASSWORD에만 둔다.
+- API 접속: `datacenter-app-dev/datacenter-api-secret`. 독립 승인 입력은 같은 namespace의 `datacenter-target-policy`에 DB_EXPECTED_HOST/DB_EXPECTED_USER로 공급한다. DB_EXPECTED_NAME은 ConfigMap의 `datacenter_app_dev`다.
+- API Registry client: `datacenter-mlflow-client`의 MLFLOW_TRACKING_USERNAME/MLFLOW_TRACKING_PASSWORD.
+
+## DEV application schema one-shot 계약
+
+`backend/initialize_schema.py`는 명시적 DEV, 독립 private JSON policy의 expected_host/expected_user/expected_database/tls_required, CA 및 3306 포트를 검증한다. 허용 DB는 datacenter_app_dev뿐이다. 연결 후 실제 DB/TLS와 table/view/routine/trigger/event 상태를 검사한다. 빈 schema에만 기존 measurements DDL을 한 번 실행하고, 기존 measurements만 있으면 SELECT로 컬럼 존재를 확인한다. 컬럼 타입·index의 완전한 schema 비교 도구는 아니다. 알 수 없는 partial schema는 거부한다.
+
+도구의 진입점은 `python -m backend.initialize_schema --policy <private-approved-json>`이다. 이 문서는 실행 승인이 아니며 이번 작업에서는 실행하지 않는다. 승인된 별도 schema 초기화 권한이 필요하고 runtime 계정에 DDL 권한을 추가하지 않는다. NullPool을 사용하며 자동 retry/reconnect는 없다. MySQL DDL 실패 시 rollback으로 복구된다고 가정하지 말고 별도 검토한다.
+
+API도 명시적 MLFLOW_ENV=dev/prod에서는 독립 DB_EXPECTED_HOST/USER/NAME 및 TLS를 요구한다. 기존 MLFLOW_ENV 미설정 PROD의 접속 설정 호환성은 유지하되 DEV DB와 system schema는 거부한다. 기존 PROD가 새 코드를 사용할 경우 schema는 이미 존재해야 한다. PROD manifest 및 live 환경은 변경하지 않는다.
+
+## 후속 운영 작업 — 이번 범위 밖
+
+1. 기존 DEV DB/계정/권한 및 외부 Secret을 별도 승인된 절차로 확인한다. 계정 재생성이나 naming 전환을 선행 조건으로 요구하지 않는다.
+2. 미빌드 API artifact와 reviewed Auth image 가용성을 검증한다. 이번 작업에서 image build/deploy는 하지 않는다.
+3. Tracking schema/Registry V1 및 필요한 application schema 초기화는 별도 승인 후 수행한다.
+4. Auth empty baseline 또는 승인 checkpoint 검토 후에만 migration/bootstrap 실행 여부를 결정한다. Job suspend를 이번 작업에서 해제하지 않는다.
+5. DEV 통합 검증, backup/rollback 및 별도 수동 승인 전 PROD promotion은 하지 않는다.
 
 S3 backup은 기존 SSE-KMS/Bucket Key ON, exact VersionId 및 checksum fail-closed를 유지한다. 이번 변경에 AWS resource/backup 실행은 없다.

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: datacenter-app-dev
 resources:
   - ../../../base/api
+  - ../../../base/rds-ca
 images:
   # Existing imported PROD image does not contain the DEV-aware loader yet.
   - name: datacenter-api

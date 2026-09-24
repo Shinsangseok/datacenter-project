@@ -9,22 +9,40 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: datacenter-api
-          env:
-            - name: DIFY_API_KEY
-              $patch: delete
-            - name: DB_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: datacenter-api-config
-                  key: DB_NAME
-            - name: MLFLOW_TRACKING_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: datacenter-mlflow-client
-                  key: MLFLOW_TRACKING_USERNAME
-            - name: MLFLOW_TRACKING_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: datacenter-mlflow-client
-                  key: MLFLOW_TRACKING_PASSWORD
+      - name: datacenter-api
+        env:
+        - name: DIFY_API_KEY
+          $patch: delete
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: datacenter-api-config
+              key: DB_NAME
+        - name: MLFLOW_TRACKING_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-mlflow-client
+              key: MLFLOW_TRACKING_USERNAME
+        - name: MLFLOW_TRACKING_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-mlflow-client
+              key: MLFLOW_TRACKING_PASSWORD
+        - name: DB_EXPECTED_HOST
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-target-policy
+              key: DB_EXPECTED_HOST
+        - name: DB_EXPECTED_USER
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-target-policy
+              key: DB_EXPECTED_USER
+        volumeMounts:
+        - name: db-ca
+          mountPath: /etc/datacenter/certs
+          readOnly: true
+      volumes:
+      - name: db-ca
+        configMap:
+          name: mlflow-rds-ca

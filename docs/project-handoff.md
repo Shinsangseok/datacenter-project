@@ -67,7 +67,7 @@ v1.36.4+k3s1
 Node:
 
 ```text
-ip-172-31-54-143
+<PRIVATE_EC2_HOSTNAME>
 Role: control-plane
 Single node
 ```

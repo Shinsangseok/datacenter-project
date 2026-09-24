@@ -7,16 +7,66 @@ spec:
   template:
     spec:
       containers:
-        - name: mlflow
-          env:
-            # Independent approval inputs; never infer them from DB_HOST/DB_USER.
-            - name: MLFLOW_EXPECTED_DB_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: mlflow-target-policy
-                  key: MLFLOW_EXPECTED_DB_HOST
-            - name: MLFLOW_EXPECTED_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: mlflow-target-policy
-                  key: MLFLOW_EXPECTED_DB_USER
+      - name: mlflow
+        env:
+        - name: MLFLOW_EXPECTED_DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_DB_HOST
+        - name: MLFLOW_EXPECTED_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_DB_USER
+        - name: MLFLOW_EXPECTED_AUTH_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_AUTH_HOST
+        - name: MLFLOW_EXPECTED_AUTH_USER
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_AUTH_RUNTIME_USER
+        - name: MLFLOW_AUTH_ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-auth-server
+              key: MLFLOW_AUTH_ADMIN_USERNAME
+        - name: MLFLOW_FLASK_SERVER_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-auth-server
+              key: MLFLOW_FLASK_SERVER_SECRET_KEY
+        image: docker.io/library/mlflow-auth-readiness:3.16.1-reviewed@sha256:076a69736001ea886c9ce06d8bda3d6626ea85d3dcfaf66c933598d817754115
+        command:
+        - python
+        - -B
+        - /opt/mlflow/auth/auth_server.py
+        volumeMounts:
+        - name: auth-code
+          mountPath: /opt/mlflow/auth
+          readOnly: true
+        - name: auth-policy
+          mountPath: /etc/mlflow-auth/policy
+          readOnly: true
+        - name: auth-db
+          mountPath: /etc/mlflow-auth/db
+          readOnly: true
+        - name: auth-run
+          mountPath: /run/mlflow-auth
+      volumes:
+      - name: auth-code
+        configMap:
+          name: mlflow-auth-code
+      - name: auth-policy
+        configMap:
+          name: mlflow-auth-policy
+      - name: auth-db
+        secret:
+          secretName: mlflow-auth-runtime-db
+          defaultMode: 288
+      - name: auth-run
+        emptyDir:
+          medium: Memory

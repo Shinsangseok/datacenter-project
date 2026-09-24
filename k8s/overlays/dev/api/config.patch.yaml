@@ -7,4 +7,6 @@ data:
   MLFLOW_ENV: dev
   DB_NAME: datacenter_app_dev
   MLFLOW_TRACKING_URI: http://mlflow.mlflow-dev.svc.cluster.local:5000
-  DIFY_BASE_URL: ""
+  DIFY_BASE_URL: ''
+  DB_SSL_CA: /etc/datacenter/certs/global-bundle.pem
+  DB_EXPECTED_NAME: datacenter_app_dev

@@ -45,7 +45,7 @@ Configuration:
 The subnet route table was verified to contain:
 
 ```text
-172.31.0.0/16 -> local
+<VPC_CIDR> -> local
 0.0.0.0/0     -> Internet Gateway
 ```
 

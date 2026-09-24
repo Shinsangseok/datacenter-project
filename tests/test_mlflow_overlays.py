@@ -52,13 +52,54 @@ class OverlayTests(unittest.TestCase):
         original = index(render('k8s/mlflow'))
         for key, value in original.items(): self.assertEqual(self.prod[key], value)
 
-    def test_auth_not_enabled_and_no_secret_values_rendered(self):
+    def test_prod_auth_unchanged_and_dev_jobs_suspended(self):
         for objects in [self.prod, self.dev]:
-            self.assertFalse(any(key[0] in ['Secret', 'Job'] for key in objects))
-            for key, value in objects.items():
-                if key[0] == 'Deployment' and key[2] == 'mlflow':
-                    self.assertEqual(value['spec']['template']['spec']['containers'][0]['command'],
-                                     ['python', '/opt/mlflow/launcher.py'])
+            self.assertFalse(any(key[0] == 'Secret' for key in objects))
+        self.assertFalse(any(key[0] == 'Job' for key in self.prod))
+        prod = self.prod[('Deployment', 'mlflow', 'mlflow')]
+        self.assertEqual(prod['spec']['template']['spec']['containers'][0]['command'],
+                         ['python', '/opt/mlflow/launcher.py'])
+        dev = self.dev[('Deployment', 'mlflow-dev', 'mlflow')]
+        server = dev['spec']['template']['spec']['containers'][0]
+        self.assertEqual(server['command'], ['python', '-B', '/opt/mlflow/auth/auth_server.py'])
+        self.assertNotIn('MLFLOW_AUTH_ADMIN_PASSWORD', [x['name'] for x in server['env']])
+        jobs = [v for k, v in self.dev.items() if k[0] == 'Job']
+        self.assertEqual(len(jobs), 2)
+        for job in jobs:
+            spec = job['spec']
+            self.assertIs(spec['suspend'], True)
+            self.assertEqual((spec['backoffLimit'], spec['parallelism'], spec['completions']), (0, 1, 1))
+            self.assertEqual(spec['activeDeadlineSeconds'], 300)
+            pod = spec['template']['spec']
+            self.assertEqual(pod['restartPolicy'], 'Never')
+            container = pod['containers'][0]
+            self.assertEqual(container['image'], server['image'])
+            env = {x['name']: x for x in container['env']}
+            expected = ('MLFLOW_EXPECTED_AUTH_MIGRATION_USER' if container['name'] == 'migration'
+                        else 'MLFLOW_EXPECTED_AUTH_RUNTIME_USER')
+            self.assertEqual(env['MLFLOW_EXPECTED_AUTH_USER']['valueFrom']['secretKeyRef'],
+                             {'name': 'mlflow-target-policy', 'key': expected})
+
+    def test_dev_configmap_mounts_resolve_and_ca_is_public(self):
+        for key, obj in self.dev.items():
+            if key[0] not in {'Deployment', 'Job'}:
+                continue
+            namespace = key[1]
+            pod = obj['spec']['template']['spec']
+            volumes = {v['name']: v for v in pod['volumes']}
+            for volume in volumes.values():
+                if 'configMap' in volume:
+                    self.assertIn(('ConfigMap', namespace, volume['configMap']['name']), self.dev)
+            for container in pod['containers']:
+                for mount in container.get('volumeMounts', []):
+                    self.assertIn(mount['name'], volumes)
+        for namespace in ['mlflow-dev', 'datacenter-app-dev']:
+            cas = [v for k, v in self.dev.items() if k[0] == 'ConfigMap' and k[1] == namespace
+                   and k[2].startswith('mlflow-rds-ca-')]
+            self.assertEqual(len(cas), 1)
+            bundle = cas[0]['data']['global-bundle.pem']
+            self.assertIn('-----BEGIN CERTIFICATE-----', bundle)
+            self.assertNotIn('PRIVATE KEY', bundle)
 
     def test_dev_namespaces_service_hpa_and_references(self):
         namespaces = {'mlflow-dev', 'datacenter-app-dev'}
@@ -88,9 +129,17 @@ class OverlayTests(unittest.TestCase):
         self.assertEqual(config['MLFLOW_EXPECTED_DB_NAME'], config['DB_NAME'])
         deployment = self.dev[('Deployment', 'mlflow-dev', 'mlflow')]
         env = deployment['spec']['template']['spec']['containers'][0]['env']
-        self.assertEqual({x['name'] for x in env}, {'MLFLOW_EXPECTED_DB_HOST', 'MLFLOW_EXPECTED_DB_USER'})
+        expected = {'MLFLOW_EXPECTED_DB_HOST', 'MLFLOW_EXPECTED_DB_USER',
+                    'MLFLOW_EXPECTED_AUTH_HOST', 'MLFLOW_EXPECTED_AUTH_USER'}
+        self.assertTrue(expected.issubset({x['name'] for x in env}))
         for item in env:
-            self.assertEqual(item['valueFrom']['secretKeyRef']['name'], 'mlflow-target-policy')
+            if item['name'] in expected:
+                self.assertEqual(item['valueFrom']['secretKeyRef']['name'], 'mlflow-target-policy')
+        api = self.dev[('Deployment', 'datacenter-app-dev', 'datacenter-api')]
+        app_env = {x['name']: x for x in api['spec']['template']['spec']['containers'][0]['env']}
+        for name in ['DB_EXPECTED_HOST', 'DB_EXPECTED_USER']:
+            self.assertEqual(app_env[name]['valueFrom']['secretKeyRef'],
+                             {'name': 'datacenter-target-policy', 'key': name})
         pvc = self.dev[('PersistentVolumeClaim', 'mlflow-dev', 'mlflow-artifacts')]
         self.assertEqual(pvc['metadata']['namespace'], 'mlflow-dev')
 

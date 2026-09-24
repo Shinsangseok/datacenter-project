@@ -1,7 +1,6 @@
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import quote_plus
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Response
@@ -12,26 +11,18 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from backend.dify import run_analysis
 from backend.model_loader import load_model
+from backend.db_config import database_url
+from backend.schema import validate_measurements
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 MODEL_PATH = BASE_DIR / "models" / "model.pkl"
 
-DB_HOST = os.environ["DB_HOST"]
-DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.environ["DB_NAME"]
-DB_USER = os.environ["DB_USER"]
-DB_PASSWORD = os.environ["DB_PASSWORD"]
-
-DB_URL = (
-    f"mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}"
-    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
-)
-
 engine = create_engine(
-    DB_URL,
+    database_url(os.environ),
     pool_pre_ping=True,
     pool_recycle=1800,
+    hide_parameters=True,
 )
 
 model = load_model(MODEL_PATH)
@@ -72,24 +63,6 @@ power_gauge = Gauge(
 )
 
 
-CREATE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS measurements (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    measured_at DATETIME(6) NOT NULL,
-    server_id VARCHAR(32) NOT NULL,
-    cpu DECIMAL(5,2) NOT NULL,
-    memory DECIMAL(5,2) NOT NULL,
-    temperature DECIMAL(6,2) NOT NULL,
-    power DECIMAL(8,2) NOT NULL,
-    prediction VARCHAR(16) NOT NULL,
-    probability DECIMAL(6,5) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_server_time (server_id, measured_at),
-    INDEX idx_prediction_time (prediction, measured_at)
-)
-"""
-
-
 class PredictRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -108,9 +81,13 @@ app = FastAPI(
 
 
 @app.on_event("startup")
-def initialize_database() -> None:
-    with engine.begin() as connection:
-        connection.execute(text(CREATE_TABLE_SQL))
+def validate_database_schema() -> None:
+    try:
+        with engine.connect() as connection:
+            validate_measurements(connection)
+    except Exception:
+        # Startup must fail without DDL, credentials or driver diagnostics in logs.
+        raise RuntimeError("Application schema validation failed; initialization required") from None
 
 
 @app.get("/health")

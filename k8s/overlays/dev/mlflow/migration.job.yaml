@@ -1,0 +1,97 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mlflow-auth-migrate-v1
+  namespace: mlflow-dev
+spec:
+  suspend: true
+  parallelism: 1
+  completions: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: migration
+        image: docker.io/library/mlflow-auth-readiness:3.16.1-reviewed@sha256:076a69736001ea886c9ce06d8bda3d6626ea85d3dcfaf66c933598d817754115
+        command:
+        - python
+        - -B
+        - /opt/mlflow/auth/fenced_migration.py
+        env:
+        - name: EXECUTOR_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: PYTHONDONTWRITEBYTECODE
+          value: '1'
+        - name: MLFLOW_ENV
+          value: dev
+        - name: MLFLOW_EXPECTED_AUTH_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_AUTH_HOST
+        - name: MLFLOW_EXPECTED_AUTH_USER
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_AUTH_MIGRATION_USER
+        volumeMounts:
+        - name: auth-code
+          mountPath: /opt/mlflow/auth
+          readOnly: true
+        - name: auth-policy
+          mountPath: /etc/mlflow-auth/policy
+          readOnly: true
+        - name: auth-db
+          mountPath: /etc/mlflow-auth/db
+          readOnly: true
+        - name: ca
+          mountPath: /etc/mlflow/certs
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+        - name: launcher
+          mountPath: /opt/mlflow
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: auth-code
+        configMap:
+          name: mlflow-auth-code
+      - name: auth-policy
+        configMap:
+          name: mlflow-auth-policy
+      - name: auth-db
+        secret:
+          secretName: mlflow-auth-migration-db
+          defaultMode: 288
+      - name: ca
+        configMap:
+          name: mlflow-rds-ca
+      - name: tmp
+        emptyDir: {}
+      - name: launcher
+        configMap:
+          name: mlflow-launcher
