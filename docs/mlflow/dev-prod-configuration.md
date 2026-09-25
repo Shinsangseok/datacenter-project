@@ -43,6 +43,8 @@
 
 Auth 진입점의 환경/파일 계약:
 
+migration/bootstrap Job과 Auth server는 `PYTHONPATH=/opt/mlflow:/opt/mlflow/auth`를 명시한다. 공통 `db_target.py`는 ConfigMap의 `db_target.py` key를 `subPath`로 `/opt/mlflow/db_target.py`에 mount하고, Auth 코드는 `/opt/mlflow/auth`에 둔다. ConfigMap의 timestamp symlink를 resolve하여 import 위치를 추론하지 않는다. `subPath` 파일은 실행 중 자동 갱신되지 않으므로 새 코드 적용에는 새 Pod가 필요하다. Job은 계속 suspended 상태로 렌더링된다.
+
 | 입력 | 계약 |
 |---|---|
 | AUTH_POLICY | 비밀 없는 승인 policy JSON 파일 경로 |

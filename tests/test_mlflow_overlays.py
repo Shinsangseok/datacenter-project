@@ -1,8 +1,11 @@
 """Offline manifest compatibility and reviewed migration preservation checks."""
 import hashlib
+import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+import tempfile
 import unittest
 import yaml
 
@@ -79,6 +82,64 @@ class OverlayTests(unittest.TestCase):
                         else 'MLFLOW_EXPECTED_AUTH_RUNTIME_USER')
             self.assertEqual(env['MLFLOW_EXPECTED_AUTH_USER']['valueFrom']['secretKeyRef'],
                              {'name': 'mlflow-target-policy', 'key': expected})
+
+    def test_auth_imports_with_projected_configmap_symlinks(self):
+        objects = [obj for key, obj in self.dev.items()
+                   if key[1] == 'mlflow-dev' and key[0] in {'Deployment', 'Job'}]
+        self.assertEqual(len(objects), 3)
+        for obj in objects:
+            with self.subTest(kind=obj['kind'], name=obj['metadata']['name']), tempfile.TemporaryDirectory() as tmp:
+                pod = obj['spec']['template']['spec']
+                container = pod['containers'][0]
+                env = {item['name']: item.get('value') for item in container['env']}
+                self.assertEqual(env['PYTHONPATH'], '/opt/mlflow:/opt/mlflow/auth')
+                mounts = {item['mountPath']: item for item in container['volumeMounts']}
+                self.assertNotIn('/opt/mlflow', mounts)
+                shared = mounts['/opt/mlflow/db_target.py']
+                self.assertEqual(shared['subPath'], 'db_target.py')
+                self.assertIs(shared['readOnly'], True)
+                self.assertIs(mounts['/opt/mlflow/auth']['readOnly'], True)
+                volumes = {item['name']: item for item in pod['volumes']}
+                def data(mount):
+                    name = volumes[mount['name']]['configMap']['name']
+                    return self.dev[('ConfigMap', 'mlflow-dev', name)]['data']
+                # Model Kubernetes' ..data timestamp projection, plus a subPath file.
+                root = Path(tmp)/'opt/mlflow'
+                auth = root/'auth'
+                timestamp = auth/'..2026_09_25_00_00_00.000000001'
+                timestamp.mkdir(parents=True)
+                (auth/'..data').symlink_to(timestamp.name, target_is_directory=True)
+                for name, content in data(mounts['/opt/mlflow/auth']).items():
+                    (timestamp/name).write_text(content)
+                    (auth/name).symlink_to(Path('..data')/name)
+                (root/'db_target.py').write_text(data(shared)['db_target.py'])
+                entrypoint = Path(container['command'][-1]).stem
+                smoke = """
+import importlib, socket, sys
+from unittest.mock import patch
+with patch.object(socket.socket, 'connect', side_effect=AssertionError('network forbidden')), \
+     patch('pymysql.connect', side_effect=AssertionError('DB forbidden')), \
+     patch('sqlalchemy.create_engine', side_effect=AssertionError('DB forbidden')):
+    import db_target
+    before = list(sys.path)
+    import auth_config
+    assert sys.path == before, 'Auth must not infer paths from projection symlinks'
+    module = importlib.import_module(sys.argv[1])
+    assert callable(module.main)
+print('IMPORT PASS')
+"""
+                child_env = {**os.environ, 'PYTHONPATH': str(root)+os.pathsep+str(auth),
+                             'MLFLOW_DISABLE_AGENT_HINT': '1', 'MLFLOW_DISABLE_TELEMETRY': 'true'}
+                result = subprocess.run([sys.executable, '-B', '-c', smoke, entrypoint],
+                                        cwd=tmp, env=child_env, capture_output=True, text=True, timeout=60)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn('IMPORT PASS', result.stdout)
+                # Missing the common module path must fail before opening a DB.
+                child_env['PYTHONPATH'] = str(auth)
+                missing = subprocess.run([sys.executable, '-B', '-c', 'import auth_config'],
+                                         cwd=tmp, env=child_env, capture_output=True, text=True, timeout=30)
+                self.assertNotEqual(missing.returncode, 0)
+                self.assertIn("No module named 'db_target'", missing.stderr)
 
     def test_dev_configmap_mounts_resolve_and_ca_is_public(self):
         for key, obj in self.dev.items():

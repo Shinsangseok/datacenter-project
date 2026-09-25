@@ -28,6 +28,8 @@ spec:
         - -B
         - /opt/mlflow/auth/bootstrap_admin.py
         env:
+        - name: PYTHONPATH
+          value: /opt/mlflow:/opt/mlflow/auth
         - name: EXECUTOR_ID
           valueFrom:
             fieldRef:
@@ -74,7 +76,8 @@ spec:
         - name: run
           mountPath: /run/mlflow-auth
         - name: launcher
-          mountPath: /opt/mlflow
+          mountPath: /opt/mlflow/db_target.py
+          subPath: db_target.py
           readOnly: true
         resources:
           requests:

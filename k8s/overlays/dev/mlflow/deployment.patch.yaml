@@ -9,6 +9,8 @@ spec:
       containers:
       - name: mlflow
         env:
+        - name: PYTHONPATH
+          value: /opt/mlflow:/opt/mlflow/auth
         - name: MLFLOW_EXPECTED_DB_HOST
           valueFrom:
             secretKeyRef:
@@ -45,6 +47,12 @@ spec:
         - -B
         - /opt/mlflow/auth/auth_server.py
         volumeMounts:
+        - mountPath: /opt/mlflow
+          $patch: delete
+        - name: launcher
+          mountPath: /opt/mlflow/db_target.py
+          subPath: db_target.py
+          readOnly: true
         - name: auth-code
           mountPath: /opt/mlflow/auth
           readOnly: true

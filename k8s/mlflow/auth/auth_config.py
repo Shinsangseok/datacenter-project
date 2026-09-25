@@ -2,11 +2,10 @@
 import json
 import os
 import ssl
-import sys
 from pathlib import Path
 
-# Scripts run from auth/ with the shared module in its parent directory.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# All Auth entrypoints receive PYTHONPATH=/opt/mlflow:/opt/mlflow/auth.
+# ConfigMap projection symlinks are not a reliable module search root.
 from db_target import DEV_DATABASES, environment, mysql_uri, require, validate_connection
 
 HEAD = "f1a2b3c4d5e6"

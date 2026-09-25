@@ -28,6 +28,8 @@ spec:
         - -B
         - /opt/mlflow/auth/fenced_migration.py
         env:
+        - name: PYTHONPATH
+          value: /opt/mlflow:/opt/mlflow/auth
         - name: EXECUTOR_ID
           valueFrom:
             fieldRef:
@@ -62,7 +64,8 @@ spec:
         - name: tmp
           mountPath: /tmp
         - name: launcher
-          mountPath: /opt/mlflow
+          mountPath: /opt/mlflow/db_target.py
+          subPath: db_target.py
           readOnly: true
         resources:
           requests:
