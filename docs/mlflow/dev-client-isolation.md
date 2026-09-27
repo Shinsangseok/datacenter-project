@@ -8,7 +8,10 @@ No migration or administrator bootstrap is needed to register a client.
 
 The reviewed MLflow build can permit resource creation when workspaces are off.
 For this DEV read-only service, `read_only_auth:authenticate` first delegates to
-MLflow Basic authentication, then denies non-admin methods except GET/HEAD.
+MLflow Basic authentication, then allows non-admin GET/HEAD only on the enumerated model, experiment, run,
+artifact and self-identity read API paths. Other routes, including user/role
+management reads, are denied. MLflow otherwise permits user roster reads when
+workspaces are disabled, which exceeds this client contract.
 MLflow's resource authorization still runs for reads, including its native
 FastAPI artifact bridge. This also denies client password/profile mutation and
 POST-based searches; those are outside this read-only client contract. The

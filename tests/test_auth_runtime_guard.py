@@ -72,11 +72,11 @@ class RuntimeGuardTests(unittest.TestCase):
 class ReadOnlyAuthTests(unittest.TestCase):
     def setUp(self): self.app = Flask(__name__)
 
-    def request(self, method, is_admin=False, invalid=False):
+    def request(self, method, is_admin=False, invalid=False, path='/api/2.0/mlflow/experiments/get'):
         auth = Response('Unauthorized', 401) if invalid else Authorization('basic', {'username': 'client'})
         module = SimpleNamespace(authenticate_request_basic_auth=lambda: auth,
                                  store=SimpleNamespace(get_user=lambda u: SimpleNamespace(is_admin=is_admin)))
-        with patch.dict(sys.modules, {'mlflow.server.auth': module}), self.app.test_request_context('/api/2.0/mlflow/experiments/create', method=method):
+        with patch.dict(sys.modules, {'mlflow.server.auth': module}), self.app.test_request_context(path, method=method):
             return read_only_auth.authenticate()
 
     def test_valid_read_defers_resource_authorization_to_mlflow(self):
@@ -93,6 +93,20 @@ class ReadOnlyAuthTests(unittest.TestCase):
     def test_invalid_credentials_remain_401_before_method_gate(self):
         for method in ('GET', 'POST', 'PUT'):
             self.assertEqual(self.request(method, invalid=True).status_code, 401)
+
+    def test_client_management_and_unknown_get_routes_are_denied(self):
+        for path in ['/api/2.0/mlflow/users/list', '/api/2.0/mlflow/users/get',
+                     '/api/3.0/mlflow/roles/list', '/api/3.0/mlflow/roles/get',
+                     '/ajax-api/2.0/mlflow/users/list', '/api/2.0/mlflow/experiments/create', '/unknown']:
+            with self.subTest(path=path):
+                self.assertEqual(self.request('GET', path=path).status_code, 403)
+
+    def test_admin_management_reads_still_reach_mlflow_authorization(self):
+        self.assertIsInstance(self.request('GET', is_admin=True, path='/api/2.0/mlflow/users/list'), Authorization)
+
+    def test_model_read_and_artifact_proxy_paths_defer_to_resource_grants(self):
+        for path in read_only_auth.READ_PATHS | {'/api/2.0/mlflow-artifacts/artifacts/2/run/artifacts/model.skops'}:
+            self.assertIsInstance(self.request('GET', path=path), Authorization)
 
     def test_unknown_auth_return_type_fails_closed(self):
         module = SimpleNamespace(authenticate_request_basic_auth=lambda: None, store=None)
