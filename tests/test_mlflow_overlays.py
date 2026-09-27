@@ -71,7 +71,7 @@ class OverlayTests(unittest.TestCase):
                          ['python', '/opt/mlflow/launcher.py'])
         dev = self.dev[('Deployment', 'mlflow-dev', 'mlflow')]
         server = dev['spec']['template']['spec']['containers'][0]
-        self.assertEqual(server['command'], ['python', '-B', '/opt/mlflow/auth/auth_server.py'])
+        self.assertEqual(server['command'], ['python', '-B', '/opt/mlflow/auth/runtime_guard.py'])
         self.assertNotIn('MLFLOW_AUTH_ADMIN_PASSWORD', [x['name'] for x in server['env']])
         jobs = [v for k, v in self.dev.items() if k[0] == 'Job']
         self.assertEqual(len(jobs), 2)

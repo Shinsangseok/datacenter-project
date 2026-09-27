@@ -6,6 +6,9 @@ configMapGenerator:
       - auth_config.py
       - schema_fingerprint.py
       - auth_server.py
+      - runtime_guard.py
+      - read_only_auth.py
+      - expected-schema-v2.json
       - bootstrap_admin.py
       - fenced_migration.py
       - migration-hashes.json

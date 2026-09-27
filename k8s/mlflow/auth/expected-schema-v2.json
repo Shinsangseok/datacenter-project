@@ -1,0 +1,20 @@
+{
+  "format": "mysql-auth-schema-v2",
+  "revision": [
+    "f1a2b3c4d5e6"
+  ],
+  "tables": {
+    "alembic_version_auth": "mysql-auth-schema-v2:25fd78cdeba203b7fa59642edfb32891937a19059a96723f8503a6dce9e5c6ef",
+    "experiment_permissions": "mysql-auth-schema-v2:762214ed8dd6291498ddb1418638ef808fcc3e5b2e6c978f63540daaa49ed90f",
+    "gateway_endpoint_permissions": "mysql-auth-schema-v2:1e5663723b8aa89355934c5dda1cb30aec21827973eef524f3b457be557962ae",
+    "gateway_model_definition_permissions": "mysql-auth-schema-v2:3ac1d311a8cb8a16627cac98dffd75dd5c1dd4e2479e22018765d38b4f9b8c01",
+    "gateway_secret_permissions": "mysql-auth-schema-v2:376e11c778c7c45500a59651b031f9b792f10380e0b4a655532d09f4ba445345",
+    "registered_model_permissions": "mysql-auth-schema-v2:e0dea7505402e98a5ce07b1867efddb4ca5990ba03db6b43ca1a40e6f04a2faa",
+    "role_permissions": "mysql-auth-schema-v2:24782c136a7727f56248bb6699d843007cca316aa916d1cd6814d8ef8a897cbc",
+    "roles": "mysql-auth-schema-v2:806caff19531007b92de0455b2022f94f158cf53ec621d1251abe60f8a880225",
+    "scorer_permissions": "mysql-auth-schema-v2:58856998286d573cfba22aa719628ff830546625e34a0b512a10361e53fef458",
+    "user_role_assignments": "mysql-auth-schema-v2:ec3ebd8d75d194329c8b7924242982b16c37ca94870dfa57b663fe36aa9c8649",
+    "users": "mysql-auth-schema-v2:87fbd5966835db9a3ecd7fa910967bec8ccc5f952ae68db9c5fb14ad0d991fc3",
+    "workspace_permissions": "mysql-auth-schema-v2:4c9885e540a7d2264392c2908baf9a4bb63f197caf0a81da950e76eeb99766c3"
+  }
+}

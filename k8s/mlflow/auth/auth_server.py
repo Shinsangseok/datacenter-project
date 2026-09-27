@@ -8,7 +8,7 @@ import sys
 
 from sqlalchemy import create_engine, text
 from auth_config import HEAD, load, require, uri
-from db_target import mysql_uri, redact, sensitive_values, tracking_connection, verify_tracking
+from db_target import environment, mysql_uri, redact, sensitive_values, tracking_connection, verify_tracking
 
 
 def write_auth_config(url):
@@ -17,6 +17,8 @@ def write_auth_config(url):
     path.parent.mkdir(parents=True, exist_ok=True)
     cfg = configparser.ConfigParser(interpolation=None)
     cfg['mlflow'] = {'default_permission': 'NO_PERMISSIONS', 'database_uri': url.replace('%', '%%')}
+    if environment(os.environ) == 'dev':
+        cfg['mlflow']['authorization_function'] = 'read_only_auth:authenticate'
     with path.open('w') as handle:
         cfg.write(handle)
     path.chmod(0o600)

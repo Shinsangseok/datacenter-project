@@ -45,7 +45,7 @@ spec:
         command:
         - python
         - -B
-        - /opt/mlflow/auth/auth_server.py
+        - /opt/mlflow/auth/runtime_guard.py
         volumeMounts:
         - mountPath: /opt/mlflow
           $patch: delete
