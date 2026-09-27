@@ -1,4 +1,5 @@
 """Offline manifest compatibility and reviewed migration preservation checks."""
+import ast
 import hashlib
 import os
 from pathlib import Path
@@ -25,13 +26,19 @@ def index(objects):
 
 
 class PreservationTests(unittest.TestCase):
-    def test_reviewed_fencing_bootstrap_and_revision_hashes_unchanged(self):
-        expected = {'fenced_migration.py': '850fae6528af880ed9f00c72ff2956bf5df03963bbcdd9c60264a62271b61d86',
-                    'bootstrap_admin.py': '5f70e516a1e372e3440b825da2d16354bb01d838780682682a0efc3c0a1b9e84',
+    def test_reviewed_bootstrap_and_revision_hashes_unchanged(self):
+        expected = {'bootstrap_admin.py': '5f70e516a1e372e3440b825da2d16354bb01d838780682682a0efc3c0a1b9e84',
                     'migration-hashes.json': '9c809e535b2e8d129a5bbcc78d29aff6d4803cea5a1246a3ad1aa0a738a9fe22'}
         for name, digest in expected.items():
             with self.subTest(file=name):
                 self.assertEqual(hashlib.sha256((ROOT/'k8s/mlflow/auth'/name).read_bytes()).hexdigest(), digest)
+
+    def test_reviewed_fence_unchanged_except_schema_snapshot(self):
+        tree = ast.parse((ROOT/'k8s/mlflow/auth/fenced_migration.py').read_text())
+        tree.body = [node for node in tree.body
+                     if not (isinstance(node, ast.FunctionDef) and node.name == 'snapshot')]
+        self.assertEqual(hashlib.sha256(ast.dump(tree, include_attributes=False).encode()).hexdigest(),
+                         'fdaf4819baab14b1a994a8967424ea6be955f0071e5ad040daa4eb0b34ed871f')
 
     def test_api_compatibility_copies_do_not_drift(self):
         for name in ['deployment.yaml', 'configmap.yaml', 'service.yaml', 'hpa.yaml']:

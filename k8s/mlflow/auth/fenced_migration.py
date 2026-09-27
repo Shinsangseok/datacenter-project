@@ -13,12 +13,14 @@ logging.disable(logging.CRITICAL)
 def emit(kind,**kw):
  print(json.dumps(dict(time=time.time(),executor=P['executor'],event=kind,**kw)),flush=True)
 def snapshot(c):
+ from schema_fingerprint import load_context,schema_snapshot
+ context=load_context(c)
  names=[x[0] for x in c.exec_driver_sql('SHOW TABLES')];out={}
  for n in sorted(names):
   assert re.fullmatch('[a-zA-Z0-9_]+',n)
   ddl=c.exec_driver_sql('SHOW CREATE TABLE `'+n+'`').one()[1]
   rows=[list(x) for x in c.exec_driver_sql('SELECT * FROM `'+n+'`')]
-  out[n]={'schema':hashlib.sha256(ddl.encode()).hexdigest(),'data':hashlib.sha256(json.dumps(sorted(rows,key=lambda x:json.dumps(x,default=str)),default=str).encode()).hexdigest(),'rows':len(rows)}
+  out[n]={**schema_snapshot(c,n,ddl,context),'data':hashlib.sha256(json.dumps(sorted(rows,key=lambda x:json.dumps(x,default=str)),default=str).encode()).hexdigest(),'rows':len(rows)}
  rev=list(c.exec_driver_sql('SELECT version_num FROM alembic_version_auth').scalars()) if 'alembic_version_auth' in names else []
  return {'tables':out,'revision':rev}
 def main():

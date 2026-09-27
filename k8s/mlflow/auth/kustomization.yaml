@@ -4,6 +4,7 @@ configMapGenerator:
   - name: mlflow-auth-code
     files:
       - auth_config.py
+      - schema_fingerprint.py
       - auth_server.py
       - bootstrap_admin.py
       - fenced_migration.py

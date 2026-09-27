@@ -36,7 +36,7 @@
 
 `k8s/mlflow/auth/`는 기존 reviewed bundle의 repo 사본이다. 과거 lab 소스를 덮어쓰지 않았다.
 
-- `fenced_migration.py`, `bootstrap_admin.py`, `migration-hashes.json`: reviewed 원본과 동일. 동일 physical session의 GET_LOCK/DDL, reconnect 금지, checkpoint/fingerprint, head/hash 검증 유지.
+- `bootstrap_admin.py`, `migration-hashes.json`: reviewed 원본과 동일. `fenced_migration.py`는 snapshot의 schema 직렬화만 v2 canonicalization으로 변경했다. snapshot 이외 reviewed 코드의 AST hash를 검증하며 동일 physical session의 GET_LOCK/DDL, reconnect 금지, checkpoint, head/hash 검증을 유지한다. [fingerprint 형식과 전환 조건](auth-schema-fingerprint.md)을 따른다.
 - `auth_config.py`: production/development 모두 MySQL/TLS. 과거 `isolated-test` 모드와 TLS-off 설정을 거부한다.
 - `auth_server.py`: SQLite 분기 제거. 같은 Tracking preflight와 Auth target/TLS/head/admin 검사를 수행한다. 한 RDS라는 승인 구조에 맞춰 Tracking/Auth host는 같고 DB/account는 달라야 한다.
 - 정상 server에는 bootstrap admin password를 넣지 않는다. config/child log의 원문 및 URL-encoded credential을 마스킹한다.
