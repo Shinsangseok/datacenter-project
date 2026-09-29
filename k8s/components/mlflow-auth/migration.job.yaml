@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: mlflow-auth-migrate-v1
-  namespace: mlflow-dev
+  namespace: mlflow
 spec:
   suspend: true
   parallelism: 1
@@ -37,7 +37,10 @@ spec:
         - name: PYTHONDONTWRITEBYTECODE
           value: '1'
         - name: MLFLOW_ENV
-          value: dev
+          valueFrom:
+            configMapKeyRef:
+              name: mlflow-config
+              key: MLFLOW_ENV
         - name: MLFLOW_EXPECTED_AUTH_HOST
           valueFrom:
             secretKeyRef:
@@ -48,6 +51,11 @@ spec:
             secretKeyRef:
               name: mlflow-target-policy
               key: MLFLOW_EXPECTED_AUTH_MIGRATION_USER
+        - name: MLFLOW_EXPECTED_SERVER_UUID
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_SERVER_UUID
         volumeMounts:
         - name: auth-code
           mountPath: /opt/mlflow/auth
@@ -66,6 +74,10 @@ spec:
         - name: launcher
           mountPath: /opt/mlflow/db_target.py
           subPath: db_target.py
+          readOnly: true
+        - name: launcher
+          mountPath: /opt/mlflow/environment-targets.json
+          subPath: environment-targets.json
           readOnly: true
         resources:
           requests:

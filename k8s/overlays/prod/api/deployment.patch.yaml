@@ -4,16 +4,13 @@ metadata:
   name: datacenter-api
   namespace: datacenter-app
 spec:
-  replicas: 1
   template:
     spec:
       containers:
       - name: datacenter-api
         env:
-        - name: DIFY_API_KEY
-          $patch: delete
-        - name: DB_NAME
+        - name: DB_EXPECTED_NAME
           valueFrom:
-            configMapKeyRef:
-              name: datacenter-api-config
-              key: DB_NAME
+            secretKeyRef:
+              name: datacenter-target-policy
+              key: DB_EXPECTED_NAME

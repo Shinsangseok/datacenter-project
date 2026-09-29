@@ -1,4 +1,4 @@
-"""DEV non-admin clients may read only; MLflow still enforces resource grants.
+"""Non-admin clients may read only; MLflow still enforces resource grants.
 
 The official authorization_function extension is also bridged to native FastAPI
 artifact routes by the reviewed MLflow build. Authenticate first so missing or

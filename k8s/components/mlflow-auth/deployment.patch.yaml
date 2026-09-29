@@ -41,6 +41,11 @@ spec:
             secretKeyRef:
               name: mlflow-auth-server
               key: MLFLOW_FLASK_SERVER_SECRET_KEY
+        - name: MLFLOW_EXPECTED_SERVER_UUID
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-target-policy
+              key: MLFLOW_EXPECTED_SERVER_UUID
         image: docker.io/library/mlflow-auth-readiness:3.16.1-reviewed@sha256:076a69736001ea886c9ce06d8bda3d6626ea85d3dcfaf66c933598d817754115
         command:
         - python
@@ -64,6 +69,10 @@ spec:
           readOnly: true
         - name: auth-run
           mountPath: /run/mlflow-auth
+        - name: launcher
+          mountPath: /opt/mlflow/environment-targets.json
+          subPath: environment-targets.json
+          readOnly: true
       volumes:
       - name: auth-code
         configMap:

@@ -7,7 +7,7 @@ Keep the existing client Secret password; no database account naming changes.
 No migration or administrator bootstrap is needed to register a client.
 
 The reviewed MLflow build can permit resource creation when workspaces are off.
-For this DEV read-only service, `read_only_auth:authenticate` first delegates to
+For both environment-selected Auth services, `read_only_auth:authenticate` first delegates to
 MLflow Basic authentication, then allows non-admin GET/HEAD only on the enumerated model, experiment, run,
 artifact and self-identity read API paths. Other routes, including user/role
 management reads, are denied. MLflow otherwise permits user roster reads when
@@ -15,8 +15,9 @@ workspaces are disabled, which exceeds this client contract.
 MLflow's resource authorization still runs for reads, including its native
 FastAPI artifact bridge. This also denies client password/profile mutation and
 POST-based searches; those are outside this read-only client contract. The
-configured bootstrap admin can use the official management API. PROD keeps its
-existing authorization configuration.
+configured bootstrap admin can use the official management API. The staged PROD
+overlay uses the same authorizer; live PROD Auth remains OFF until a separate
+approved promotion. See [the common configuration](dev-prod-configuration.md).
 
 `runtime_guard.py` replaces the deployment-only bootstrap snapshot/count gate.
 The strict one-time bootstrap verifier remains unchanged. Startup compares all

@@ -1,11 +1,12 @@
 """Environment-selected MySQL targets with independent, fail-closed expectations."""
+import json
+from pathlib import Path
 import re
 from urllib.parse import quote, quote_plus
 
 TRACKING_HEAD = "b7e2c1a4d9f3"
 TRACKING_TABLES = 59
 SYSTEM_DATABASES = {"mysql", "sys", "information_schema", "performance_schema"}
-DEV_DATABASES = {"mlflow_tracking_dev", "mlflow_auth_dev", "datacenter_app_dev"}
 
 
 def require(condition):
@@ -17,6 +18,18 @@ def environment(env):
     mode = env.get("MLFLOW_ENV", "prod")
     require(mode in {"prod", "dev"})
     return mode
+
+
+def environment_policy(env):
+    """Reviewed non-secret targets shared by every environment and entrypoint."""
+    policies = json.loads(Path(__file__).with_name("environment-targets.json").read_text())
+    require(set(policies) == {"dev", "prod"})
+    databases = [p[role] for p in policies.values()
+                 for role in ("tracking_database", "auth_database")]
+    require(len(set(databases)) == len(databases))
+    require(all(isinstance(db, str) and re.fullmatch(r"[a-z][a-z0-9_]{0,39}", db)
+                and db not in SYSTEM_DATABASES for db in databases))
+    return policies[environment(env)]
 
 
 def validate_connection(connection, *, host, database, username=None):
@@ -31,7 +44,7 @@ def validate_connection(connection, *, host, database, username=None):
 
 
 def tracking_connection(env):
-    mode = environment(env)
+    policy = environment_policy(env)
     connection = dict(host=env["DB_HOST"], port=env["DB_PORT"], database=env["DB_NAME"],
                       username=env["DB_USER"], password=env["DB_PASSWORD"])
     # Existing PROD deployments have no MLFLOW_ENV/expected-host/user settings.
@@ -42,10 +55,7 @@ def tracking_connection(env):
     expected_user = env.get("MLFLOW_EXPECTED_DB_USER", connection["username"] if legacy else "")
     if legacy:
         require(expected_db == "mlflow")
-    if mode == "dev":
-        require(expected_db == "mlflow_tracking_dev")
-    else:
-        require(expected_db not in DEV_DATABASES)
+    require(expected_db == policy["tracking_database"])
     validate_connection(connection, host=expected_host, database=expected_db, username=expected_user)
     require(bool(env["MLFLOW_MYSQL_SSL_CA"]))
     return connection

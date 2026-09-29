@@ -6,9 +6,10 @@ import signal
 import subprocess
 import sys
 
-from sqlalchemy import create_engine, text
-from auth_config import HEAD, load, require, uri
-from db_target import environment, mysql_uri, redact, sensitive_values, tracking_connection, verify_tracking
+from sqlalchemy import create_engine
+from auth_config import load, require, uri
+from db_target import mysql_uri, redact, sensitive_values, tracking_connection, verify_tracking
+from runtime_guard import verify_runtime
 
 
 def write_auth_config(url):
@@ -17,8 +18,7 @@ def write_auth_config(url):
     path.parent.mkdir(parents=True, exist_ok=True)
     cfg = configparser.ConfigParser(interpolation=None)
     cfg['mlflow'] = {'default_permission': 'NO_PERMISSIONS', 'database_uri': url.replace('%', '%%')}
-    if environment(os.environ) == 'dev':
-        cfg['mlflow']['authorization_function'] = 'read_only_auth:authenticate'
+    cfg['mlflow']['authorization_function'] = 'read_only_auth:authenticate'
     with path.open('w') as handle:
         cfg.write(handle)
     path.chmod(0o600)
@@ -34,15 +34,7 @@ def prepare():
     require(bool(os.environ.get('MLFLOW_FLASK_SERVER_SECRET_KEY')))
     require(not os.environ.get('MLFLOW_AUTH_ADMIN_PASSWORD'))
     url = uri(policy, secret)
-    engine = create_engine(url, hide_parameters=True)
-    try:
-        with engine.connect() as conn:
-            require(conn.execute(text('SELECT DATABASE()')).scalar_one() == secret['database'])
-            require(bool(conn.execute(text("SHOW SESSION STATUS LIKE 'Ssl_cipher'")).one()[1]))
-            require(conn.execute(text('SELECT version_num FROM alembic_version_auth')).scalars().all() == [HEAD])
-            require(conn.execute(text('SELECT COUNT(*) FROM users WHERE is_admin=1')).scalar_one() > 0)
-    finally:
-        engine.dispose()
+    verify_runtime(policy, secret)
     backend = mysql_uri(track, os.environ['MLFLOW_MYSQL_SSL_CA'])
     verify_tracking(create_engine(backend, hide_parameters=True), track['database'])
     env = os.environ.copy()

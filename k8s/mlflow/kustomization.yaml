@@ -8,3 +8,4 @@ configMapGenerator:
     files:
       - launcher.py
       - db_target.py
+      - environment-targets.json

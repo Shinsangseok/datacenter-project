@@ -69,6 +69,81 @@ class RuntimeGuardTests(unittest.TestCase):
             with self.assertRaises(RuntimeError): guard.validate_schema(expected, expected['tables'], expected['revision'])
 
 
+class RuntimeConnectionTests(unittest.TestCase):
+    """Run the mandatory read-only startup path with synthetic DB responses."""
+    SERVER = '11111111-2222-4333-8444-555555555555'
+
+    def run_guard(self, database, *, actual_db=None, server=None, account='runtime@fixture',
+                  role='NONE', tls=True, drift=False, users=None):
+        expected = json.loads((ROOT/'k8s/mlflow/auth/expected-schema-v2.json').read_text())
+        callbacks, queries = [], []
+        class Result:
+            def __init__(self, value): self.value = value
+            def one(self): return self.value
+            def scalar_one(self): return self.value
+            def scalars(self): return self
+            def all(self): return self.value
+        class Connection:
+            disposed = False
+            def connect(self): return self
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def dispose(self): self.disposed = True
+            def exec_driver_sql(self, sql):
+                queries.append(sql)
+                for callback in callbacks: callback(None, None, sql, None, None, False)
+                if sql.startswith('SELECT DATABASE()'):
+                    return Result((actual_db or database, server or RuntimeConnectionTests.SERVER, account, role))
+                if 'Ssl_cipher' in sql: return Result(('Ssl_cipher', 'TLS' if tls else ''))
+                if sql.startswith('SELECT TABLE_NAME'):
+                    return Result([(n, 'BASE TABLE') for n in expected['tables']])
+                if sql.startswith('SELECT COUNT(*)'): return Result(0)
+                if sql.startswith('SHOW CREATE TABLE'): return Result(('fixture', 'fixture DDL'))
+                if 'version_num' in sql: return Result(['f1a2b3c4d5e6'])
+                if sql.startswith('SELECT id,username'):
+                    return Result(users if users is not None else [(1, 'admin', 'hash', 1), (2, 'client', 'hash', 0)])
+                raise AssertionError('Unexpected SQL')
+        engine = Connection()
+        def subscribe(*args):
+            def register(fn): callbacks.append(fn); return fn
+            return register
+        def snapshot(conn, name, ddl, context):
+            return {'schema': ('mysql-auth-schema-v2:' + '0'*64 if drift else expected['tables'][name])}
+        policy = {'expected_server_uuid': self.SERVER, 'tls_required': True, 'ca_file': '/fixture/ca.pem'}
+        secret = {'host': 'db.example.invalid', 'port': 3306, 'username': 'runtime',
+                  'password': 'synthetic', 'database': database}
+        with patch.dict(os.environ, {'MLFLOW_AUTH_ADMIN_USERNAME': 'admin'}, clear=True), \
+             patch.object(guard, 'create_engine', return_value=engine), \
+             patch.object(guard.event, 'listens_for', side_effect=subscribe), \
+             patch.object(guard, 'load_context', return_value={}), \
+             patch.object(guard, 'schema_snapshot', side_effect=snapshot):
+            try:
+                guard.verify_runtime(policy, secret)
+            finally:
+                self.assertTrue(engine.disposed)
+                self.assertTrue(all(sql.startswith(('SELECT', 'SHOW')) for sql in queries))
+        self.assertEqual(len(callbacks), 1)
+        with self.assertRaises(RuntimeError): callbacks[0](None, None, 'CREATE TABLE forbidden', None, None, False)
+
+    def test_both_databases_require_full_schema_and_admin_validation(self):
+        for db in ['mlflow_auth_dev', 'mlflow_auth_prod_v1']:
+            with self.subTest(database=db): self.run_guard(db)
+
+    def test_actual_identity_and_tls_mismatch_rejected_in_both_environments(self):
+        failures = [{'actual_db': 'mlflow_auth'}, {'server': 'different'}, {'account': 'other@fixture'},
+                    {'role': 'unexpected_role'}, {'tls': False}]
+        for db in ['mlflow_auth_dev', 'mlflow_auth_prod_v1']:
+            for failure in failures:
+                with self.subTest(database=db, failure=failure), self.assertRaises(RuntimeError):
+                    self.run_guard(db, **failure)
+
+    def test_semantic_admin_and_fingerprint_reject_in_both_environments(self):
+        for db in ['mlflow_auth_dev', 'mlflow_auth_prod_v1']:
+            for failure in [{'drift': True}, {'users': []}, {'users': [(1, 'admin', 'hash', 0)]}]:
+                with self.subTest(database=db, failure=failure), self.assertRaises(RuntimeError):
+                    self.run_guard(db, **failure)
+
+
 class ReadOnlyAuthTests(unittest.TestCase):
     def setUp(self): self.app = Flask(__name__)
 
@@ -129,8 +204,8 @@ class AuthConfigModeTests(unittest.TestCase):
     def test_dev_enables_read_only_hook(self):
         self.assertEqual(self.check_mode('dev')['authorization_function'], 'read_only_auth:authenticate')
 
-    def test_prod_retains_original_auth_function(self):
-        self.assertNotIn('authorization_function', self.check_mode('prod'))
+    def test_prod_uses_identical_read_only_hook(self):
+        self.assertEqual(self.check_mode('prod')['authorization_function'], 'read_only_auth:authenticate')
 
 
 class NetworkPolicyTests(unittest.TestCase):

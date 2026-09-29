@@ -4,10 +4,8 @@ namespace: datacenter-app-dev
 resources:
   - ../../../base/api
   - ../../../base/rds-ca
-images:
-  # Existing imported PROD image does not contain the DEV-aware loader yet.
-  - name: datacenter-api
-    newTag: dev-candidate-not-built
+components:
+  - ../../../components/mlflow-client
 patches:
   - target:
       kind: HorizontalPodAutoscaler

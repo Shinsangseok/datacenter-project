@@ -1,4 +1,4 @@
-"""DEV startup invariants, independent of legitimate client/role row counts."""
+"""Shared Auth startup invariants, independent of legitimate client/role row counts."""
 import json
 import os
 from pathlib import Path
@@ -7,7 +7,7 @@ import re
 from sqlalchemy import create_engine, event
 from sqlalchemy.pool import NullPool
 
-from auth_config import HEAD, load, require, uri
+from auth_config import HEAD, require, uri
 from schema_fingerprint import FORMAT, load_context, schema_snapshot
 
 
@@ -62,9 +62,8 @@ def verify(connection, expected, admin_username):
     validate_users(users, admin_username)
 
 
-def main():
-    policy, secret = load()
-    require(policy['mode'] == 'development' and secret['database'] == 'mlflow_auth_dev')
+def verify_runtime(policy, secret):
+    """Mandatory server preflight, also on direct auth_server.py startup."""
     require(bool(policy.get('expected_server_uuid')))
     require(not os.environ.get('MLFLOW_AUTH_ADMIN_PASSWORD'))
     expected = json.loads(Path(__file__).with_name('expected-schema-v2.json').read_text())
@@ -82,6 +81,9 @@ def main():
             verify(connection, expected, os.environ['MLFLOW_AUTH_ADMIN_USERNAME'])
     finally:
         engine.dispose()
+
+
+def main():
     import auth_server
     return auth_server.main()
 
@@ -90,5 +92,5 @@ if __name__ == '__main__':
     try:
         raise SystemExit(main())
     except Exception as error:
-        print('DEV Auth startup rejected: ' + type(error).__name__, flush=True)
+        print('Auth startup rejected: ' + type(error).__name__, flush=True)
         raise SystemExit(1)

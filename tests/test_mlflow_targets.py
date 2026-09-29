@@ -205,11 +205,16 @@ class AuthTests(Offline):
         self.root = Path(self.temp.name)
         self.policy = {'mode': 'production', 'expected_host': BASE['DB_HOST'],
                        'expected_database': 'mlflow_auth_prod_v1', 'expected_head': auth_config.HEAD,
-                       'tls_required': True, 'ca_file': '/fixture/ca.pem', 'allow_empty': True}
+                       'tls_required': True, 'ca_file': '/fixture/ca.pem', 'allow_empty': True,
+                       'expected_server_uuid': '11111111-2222-4333-8444-555555555555'}
         self.secret = {'host': BASE['DB_HOST'], 'port': 3306, 'database': 'mlflow_auth_prod_v1',
                        'username': 'auth_fixture', 'password': 'synthetic-auth/+@ value'}
         os.environ.update(AUTH_POLICY=str(self.root/'policy.json'), AUTH_DB_SECRET=str(self.root/'connection.json'),
-                          MLFLOW_FLASK_SERVER_SECRET_KEY='synthetic-flask-value')
+                          MLFLOW_FLASK_SERVER_SECRET_KEY='synthetic-flask-value',
+                          MLFLOW_ENV='prod', MLFLOW_EXPECTED_AUTH_HOST=BASE['DB_HOST'],
+                          MLFLOW_EXPECTED_AUTH_USER=self.secret['username'],
+                          MLFLOW_EXPECTED_DB_HOST=BASE['DB_HOST'],
+                          MLFLOW_EXPECTED_DB_USER=BASE['DB_USER'], MLFLOW_EXPECTED_DB_NAME='mlflow')
 
     def save(self):
         (self.root/'policy.json').write_text(json.dumps(self.policy))
@@ -221,7 +226,7 @@ class AuthTests(Offline):
         self.policy.update(mode='development', expected_database='mlflow_auth_dev')
         self.secret['database'] = 'mlflow_auth_dev'
 
-    def test_legacy_production_auth_policy_compatible(self):
+    def test_explicit_production_auth_policy(self):
         self.save(); policy, secret = auth_config.load()
         self.assertEqual((policy, secret), (self.policy, self.secret))
         url = make_url(auth_config.uri(policy, secret))
@@ -271,33 +276,67 @@ class AuthTests(Offline):
             with self.subTest(key=key), self.assertRaises(RuntimeError): auth_config.load()
             os.environ[key] = value
 
-    def prepare(self, **auth_options):
+    def prepare(self):
         self.save()
-        auth = Engine(self.secret['database'], head=auth_config.HEAD, auth=True, **auth_options)
         tracking = Engine(os.environ['DB_NAME'])
-        with patch.object(auth_server, 'create_engine', side_effect=[auth, tracking]), \
+        with patch.object(auth_server, 'create_engine', return_value=tracking), \
+             patch.object(auth_server, 'verify_runtime') as verify, \
              patch.object(auth_server, 'write_auth_config', return_value='/fixture/auth.ini') as write:
             prepared = auth_server.prepare()
-        return prepared, auth, tracking, write
+        return prepared, tracking, write, verify
 
     def test_prod_and_dev_share_server_path_without_sqlite(self):
         for dev in [False, True]:
             if dev: self.development()
             with self.subTest(dev=dev):
-                (cmd, env, values), auth, tracking, write = self.prepare()
+                (cmd, env, values), tracking, write, verify = self.prepare()
                 self.assertEqual(make_url(env['MLFLOW_BACKEND_STORE_URI']).database, os.environ['DB_NAME'])
                 self.assertNotIn('sqlite', env['MLFLOW_BACKEND_STORE_URI'])
                 self.assertEqual(cmd[cmd.index('--artifacts-destination')+1], '/mlflow/artifacts')
-                self.assertTrue(auth.disposed and tracking.disposed)
+                self.assertTrue(tracking.disposed)
+                verify.assert_called_once_with(self.policy, self.secret)
                 write.assert_called_once()
                 self.assertEqual(cmd[cmd.index('--app-name')+1], 'basic-auth')
                 for credential in [self.secret['password'], BASE['DB_PASSWORD'], os.environ['MLFLOW_FLASK_SERVER_SECRET_KEY']]:
                     self.assertNotIn(credential, str(cmd))
                     self.assertNotIn(credential, target.redact(credential, values))
 
-    def test_auth_server_requires_admin_and_live_tls(self):
-        for options in [{'admin': 0}, {'tls': False}]:
-            with self.subTest(options=options), self.assertRaises(RuntimeError): self.prepare(**options)
+    def test_direct_auth_server_cannot_bypass_semantic_guard(self):
+        for dev in (False, True):
+            if dev: self.development()
+            self.save()
+            with patch.object(auth_server, 'verify_runtime', side_effect=RuntimeError('guard rejected')), \
+                 patch.object(auth_server, 'create_engine') as tracking, \
+                 patch.object(auth_server, 'write_auth_config') as write, \
+                 patch.object(auth_server.subprocess, 'Popen') as child:
+                with self.assertRaises(RuntimeError): auth_server.main()
+                tracking.assert_not_called(); write.assert_not_called(); child.assert_not_called()
+
+    def test_implicit_auth_environment_is_not_legacy_escape(self):
+        self.save(); os.environ.pop('MLFLOW_ENV')
+        with self.assertRaises(RuntimeError): auth_config.load()
+
+    def test_matching_secret_and_policy_cannot_approve_partial_lab_or_other_environment(self):
+        for mode, databases in [('prod', ['mlflow_auth', 'mlflow_auth_test', 'mlflow_auth_dev', 'mlflow']),
+                                ('dev', ['mlflow_auth_prod_v1', 'mlflow_auth', 'mlflow_tracking_dev'])]:
+            os.environ['MLFLOW_ENV'] = mode
+            self.policy['mode'] = {'prod': 'production', 'dev': 'development'}[mode]
+            for db in databases:
+                self.policy['expected_database'] = self.secret['database'] = db; self.save()
+                with self.subTest(mode=mode, database=db), self.assertRaises(RuntimeError): auth_config.load()
+
+    def test_prod_independent_host_and_user_are_required(self):
+        self.save()
+        for name in ['MLFLOW_EXPECTED_AUTH_HOST', 'MLFLOW_EXPECTED_AUTH_USER']:
+            value = os.environ.pop(name)
+            with self.assertRaises(RuntimeError): auth_config.load()
+            os.environ[name] = value
+
+    def test_missing_placeholder_or_conflicting_server_identity_rejected(self):
+        for value in ['', 'REPLACE_SERVER_UUID', '00000000-0000-0000-0000-000000000000',
+                      'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee']:
+            os.environ['MLFLOW_EXPECTED_SERVER_UUID'] = value; self.save()
+            with self.subTest(value=value), self.assertRaises((RuntimeError, ValueError)): auth_config.load()
 
     def test_cross_target_before_connection_or_config_write(self):
         self.development(); self.save(); os.environ['DB_NAME'] = 'mlflow'
