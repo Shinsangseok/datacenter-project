@@ -1,40 +1,33 @@
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import quote_plus
 
-import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, generate_latest
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.pool import NullPool
+from starlette.responses import JSONResponse
 
 from backend.dify import run_analysis
+from backend.model_loader import load_model
+from backend.db_config import database_url
+from backend.startup import (Failure, Startup, StartupError, validate_database,
+                             configure_database_timeouts)
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 MODEL_PATH = BASE_DIR / "models" / "model.pkl"
 
-DB_HOST = os.environ["DB_HOST"]
-DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.environ["DB_NAME"]
-DB_USER = os.environ["DB_USER"]
-DB_PASSWORD = os.environ["DB_PASSWORD"]
+startup = Startup()
+_database_url = startup.run('configuration', lambda: database_url(os.environ))
+engine = startup.run('configuration', lambda: create_engine(
+    _database_url, pool_pre_ping=True, pool_recycle=1800, hide_parameters=True,
+))
 
-DB_URL = (
-    f"mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}"
-    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
-)
-
-engine = create_engine(
-    DB_URL,
-    pool_pre_ping=True,
-    pool_recycle=1800,
-)
-
-model = joblib.load(MODEL_PATH)
+model = load_model(MODEL_PATH, startup=startup)
 
 prediction_counter = Counter(
     "datacenter_predictions_total",
@@ -72,24 +65,6 @@ power_gauge = Gauge(
 )
 
 
-CREATE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS measurements (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    measured_at DATETIME(6) NOT NULL,
-    server_id VARCHAR(32) NOT NULL,
-    cpu DECIMAL(5,2) NOT NULL,
-    memory DECIMAL(5,2) NOT NULL,
-    temperature DECIMAL(6,2) NOT NULL,
-    power DECIMAL(8,2) NOT NULL,
-    prediction VARCHAR(16) NOT NULL,
-    probability DECIMAL(6,5) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_server_time (server_id, measured_at),
-    INDEX idx_prediction_time (prediction, measured_at)
-)
-"""
-
-
 class PredictRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -107,10 +82,39 @@ app = FastAPI(
 )
 
 
+app.state.startup_complete = False
+
+
+@app.middleware("http")
+async def require_startup(request, call_next):
+    if request.url.path != '/health' and not app.state.startup_complete:
+        return JSONResponse(status_code=503, content={'detail': 'application not ready'})
+    return await call_next(request)
+
+
 @app.on_event("startup")
-def initialize_database() -> None:
-    with engine.begin() as connection:
-        connection.execute(text(CREATE_TABLE_SQL))
+def validate_database_schema() -> None:
+    app.state.startup_complete = False
+    # Only startup reads use short timeouts. The inference/write engine above is unchanged.
+    preflight = startup.run('configuration', lambda: configure_database_timeouts(create_engine(
+        _database_url, poolclass=NullPool, hide_parameters=True,
+    ), startup))
+    try:
+        validate_database(preflight, startup)
+    finally:
+        try:
+            preflight.dispose()
+        except Exception:
+            failure = Failure('db_cleanup_failed')
+            startup._event('db_contract', failure, 1, 'permanent_or_unknown')
+            raise StartupError(failure, 'permanent_or_unknown') from None
+
+    def verify_model_ready():
+        if model is None:
+            raise RuntimeError('Model initialization incomplete')
+    # Recheck the shared budget after connection cleanup, before publishing Ready.
+    startup.run('model_load', verify_model_ready)
+    app.state.startup_complete = True
 
 
 @app.get("/health")
@@ -118,8 +122,18 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+@app.get("/startup")
+def startup_health() -> dict:
+    # One-time initialization gate. No DB/network call and no runtime age limit.
+    if not app.state.startup_complete or model is None:
+        raise HTTPException(status_code=503, detail="application not ready")
+    return {"status": "started"}
+
+
 @app.get("/ready")
 def readiness() -> dict:
+    if not app.state.startup_complete or model is None:
+        raise HTTPException(status_code=503, detail="application not ready")
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
