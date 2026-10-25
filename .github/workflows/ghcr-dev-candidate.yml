@@ -1,0 +1,106 @@
+name: GHCR DEV candidate (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghcr-dev-candidate-${{ github.ref }}
+  # Serialize publishing; do not interrupt an upload midway.
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: >-
+      github.repository == 'Shinsangseok/datacenter-project' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/fastapi-ci.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish DEV candidate only (no deployment)
+    needs: validate
+    if: >-
+      github.repository == 'Shinsangseok/datacenter-project' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/shinsangseok/datacenter-api
+      # Suppress the build-record artifact; keep only the digest in the job summary.
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
+    steps:
+      - name: Checkout the approved main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare an allowlisted build context
+        # Do not send the repository, deployment configs or runner credentials to BuildKit.
+        shell: bash
+        run: |
+          set -euo pipefail
+          context_dir="$RUNNER_TEMP/ci01-build-context"
+          mkdir -m 700 "$context_dir"
+          git archive --format=tar "$GITHUB_SHA" -- \
+            Dockerfile .dockerignore requirements.txt requirements-inference.txt backend models \
+            | tar -xf - -C "$context_dir"
+          CONTEXT_DIR="$context_dir" python3 -B - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["CONTEXT_DIR"])
+          required = ["Dockerfile", ".dockerignore", "requirements.txt", "requirements-inference.txt", "backend/main.py", "models/model.pkl"]
+          for name in required:
+              if not (root / name).is_file():
+                  raise SystemExit("Required build input missing")
+          for path in root.rglob("*"):
+              name = path.name.lower()
+              if (path.is_symlink() or not (path.is_dir() or path.is_file())
+                      or name == ".env" or name.startswith(".env.")
+                      or name in {".git", ".ssh", ".kube", ".aws", "credentials", "credentials.json"}
+                      or path.suffix.lower() in {".pem", ".key", ".p12", ".pfx", ".crt"}):
+                  raise SystemExit("Unsafe build-context entry; review required")
+          PY
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Log in to GHCR with the job token
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and publish a unique SHA-based DEV candidate
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ runner.temp }}/ci01-build-context
+          file: ${{ runner.temp }}/ci01-build-context/Dockerfile
+          platforms: linux/amd64
+          push: true
+          # Run identity prevents re-runs from overwriting an earlier candidate tag.
+          tags: ghcr.io/shinsangseok/datacenter-api:sha-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Shinsangseok/datacenter-project
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=datacenter-api-amd64
+          cache-to: type=gha,mode=min,scope=datacenter-api-amd64
+          provenance: mode=min
+      - name: Record immutable candidate reference
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          {
+            printf 'DEV candidate: `%s@%s`\n' "$IMAGE" "$IMAGE_DIGEST"
+            printf 'Source commit: `%s`\n' "$GITHUB_SHA"
+            printf 'No Kubernetes deployment or GitOps manifest update was performed.\n'
+          } >> "$GITHUB_STEP_SUMMARY"

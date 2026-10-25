@@ -1,0 +1,25 @@
+# POLICY B / MEASUREMENT CANDIDATE: not referenced by Kustomize/Helm; not applied.
+# Apply only with an approved image implementing /startup in the same template change.
+# period=5s and timeout=2s are measurement candidates; failureThreshold=48 is NOT approved.
+# Existing nominal 240s retained pending isolated/DEV cold-start and CPU/RAM measurements.
+# The 120s application budget is not a kill deadline; kubelet restarts have no exact deadline.
+# Existing Pod terminationGracePeriodSeconds=30 must be rechecked before approval.
+# See ../fastapi-startup-stability.md for sizing, stop conditions and rollback.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api
+  namespace: datacenter-app-dev
+spec:
+  template:
+    spec:
+      containers:
+        - name: datacenter-api
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 8000
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 48
+            successThreshold: 1

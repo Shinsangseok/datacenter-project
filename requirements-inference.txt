@@ -1,0 +1,4 @@
+-r requirements.txt
+mlflow-skinny==3.16.1
+skops==0.15.0
+PyYAML==6.0.3

@@ -15,6 +15,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class ContextTests(unittest.TestCase):
+    def setUp(self):
+        # Endpoint tests bypass lifespan and use mocked DB/model dependencies.
+        ready = patch.object(main.app.state, 'startup_complete', True)
+        ready.start()
+        self.addCleanup(ready.stop)
+
     def context(self, count=3, anomalies=1, rows=None):
         summary = dict(sample_count=count, anomaly_count=anomalies,
                        latest_measured_at=datetime(2026, 9, 16) if count else None)
