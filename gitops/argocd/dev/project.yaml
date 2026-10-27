@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: datacenter-dev
+  namespace: argocd
+spec:
+  description: Manual approval required; initial sync blocked
+  sourceRepos:
+  - https://github.com/Shinsangseok/datacenter-project.git
+  destinations:
+  - server: https://kubernetes.default.svc
+    namespace: datacenter-app-dev
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+  - group: apps
+    kind: Deployment
+  syncWindows:
+  - kind: deny
+    schedule: '* * * * *'
+    duration: 24h
+    applications:
+    - '*'
+    manualSync: false

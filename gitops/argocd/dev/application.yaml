@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: datacenter-api-dev
+  namespace: argocd
+spec:
+  project: datacenter-dev
+  source:
+    repoURL: https://github.com/Shinsangseok/datacenter-project.git
+    targetRevision: NOT_APPROVED_CD01B2
+    path: gitops/overlays/aws/dev-rollback
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: datacenter-app-dev
+  syncPolicy:
+    automated:
+      enabled: false
+      prune: false
+      selfHeal: false
+      allowEmpty: false
+    syncOptions:
+    - FailOnSharedResource=true
