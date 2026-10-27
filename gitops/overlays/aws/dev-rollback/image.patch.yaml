@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api
+spec:
+  template:
+    spec:
+      containers:
+      - name: datacenter-api
+        image: docker.io/library/datacenter-api@sha256:3fd70c2d1e2ded77e496d3bbbb9f1a72730fb5e0d6c7ba3612c26d086deb079e
+        imagePullPolicy: Never

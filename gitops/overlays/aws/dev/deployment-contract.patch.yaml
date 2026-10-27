@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api
+spec:
+  template:
+    spec:
+      nodeSelector:
+        datacenter.io/workload: dev
+        kubernetes.io/hostname: datacenter-k3s-worker-dev-01
+      tolerations:
+      - effect: NoSchedule
+        key: datacenter.io/dedicated
+        operator: Equal
+        value: dev
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: mlflow-rds-ca-75fggf29d8
+        name: db-ca
+      containers:
+      - name: datacenter-api
+        env:
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              key: DB_NAME
+              name: datacenter-api-config
+        - name: MLFLOW_TRACKING_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: MLFLOW_TRACKING_USERNAME
+              name: datacenter-mlflow-client
+        - name: MLFLOW_TRACKING_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: MLFLOW_TRACKING_PASSWORD
+              name: datacenter-mlflow-client
+        - name: DB_EXPECTED_HOST
+          valueFrom:
+            secretKeyRef:
+              key: DB_EXPECTED_HOST
+              name: datacenter-target-policy
+        - name: DB_EXPECTED_USER
+          valueFrom:
+            secretKeyRef:
+              key: DB_EXPECTED_USER
+              name: datacenter-target-policy
+        envFrom:
+        - configMapRef:
+            name: datacenter-api-config
+        - secretRef:
+            name: datacenter-api-secret
+        volumeMounts:
+        - mountPath: /etc/datacenter/certs
+          name: db-ca
+          readOnly: true
