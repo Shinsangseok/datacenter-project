@@ -37,7 +37,7 @@ PROD는 이번 PR에 Application/overlay/RBAC가 없으며 활성화하지 않�
 
 ## 검증과 다음 단계
 
-CD-00B의 66 PASS/8개 Kustomize 검증과 CD-01A의 설치·권한 증거를 재사용한다. 이 PR에서는 선택 파일의 독립 렌더 가능성, 변경한 Application, 현재 Live와의 spec 비교 및 비밀정보 제외를 검증한다. GitHub PR CI는 기존 FastAPI offline workflow이며 GitOps admission·실제 Diff·Sync·GHCR 앱 E2E 검증을 대체하지 않는다.
+CD-00B의 66 PASS/8개 Kustomize 검증과 CD-01A의 설치·권한 증거를 재사용한다. 이 PR에서는 선택 파일의 독립 렌더 가능성, 변경한 Application, 현재 Live와의 spec 비교 및 비밀정보 제외를 검증한다. 기존 FastAPI offline CI에 CD-01B-3 GitOps safety workflow를 추가한다. YAML/Kustomize·정확한 리소스/설정 계약과 negative test를 검사하지만 실제 Diff·Sync·GHCR 앱 E2E 검증을 대체하지 않는다.
 
 Dex는 CD-01A에서 약105.46Mi/128Mi(82.4%)를 사용했다. 현재 설정은 변경하지 않으며 새로운 Application 부하 전후에 별도 관찰한다. Worker 전체 CPU limit 합계가 물리 CPU를 넘는 위험도 후속 부하 검증 대상이다.
 

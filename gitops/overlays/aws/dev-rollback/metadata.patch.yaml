@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api
+  annotations:
+    deployment.datacenter/image-tag: datacenter-api:git-a647d80
+    deployment.datacenter/source-revision: a647d80dd4f230b26a2fc249994e5d4c4254fd44

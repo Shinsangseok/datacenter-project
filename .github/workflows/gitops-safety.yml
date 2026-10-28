@@ -1,0 +1,62 @@
+name: GitOps safety (offline)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitops-safety-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: GitOps policy and negative tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      KUBECONFIG: /dev/null
+    steps:
+      - name: Checkout tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned YAML parser
+        run: |
+          python -m pip install --only-binary=:all: PyYAML==6.0.3
+      - name: Install verified Kustomize for local rendering
+        # Official v5.8.1 release checksums.txt pins the linux/amd64 archive.
+        # https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.8.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="${RUNNER_TEMP}/gitops-safety-tools"
+          archive="${RUNNER_TEMP}/kustomize_v5.8.1_linux_amd64.tar.gz"
+          mkdir -p "$tool_dir"
+          curl --fail --silent --show-error --location --retry 3 --proto '=https' --tlsv1.2 \
+            'https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.8.1/kustomize_v5.8.1_linux_amd64.tar.gz' \
+            --output "$archive"
+          printf '%s  %s\n' \
+            '029a7f0f4e1932c52a0476cf02a0fd855c0bb85694b82c338fc648dcb53a819d' \
+            "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$tool_dir" kustomize
+          chmod 0755 "$tool_dir/kustomize"
+          test "$("$tool_dir/kustomize" version)" = 'v5.8.1'
+          printf '%s\n' "$tool_dir" >> "$GITHUB_PATH"
+      - name: Check GitOps manifests without cluster access
+        run: python scripts/gitops_safety.py check --repo .
+      - name: Run scoped safety negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f tests/test_gitops_safety.py
+          python -m unittest discover -s tests -p test_gitops_safety.py -v
