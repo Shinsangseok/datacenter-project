@@ -4,3 +4,4 @@ resources:
 - ../dev
 patches:
 - path: image.patch.yaml
+- path: metadata.patch.yaml
