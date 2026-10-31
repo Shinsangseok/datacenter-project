@@ -24,4 +24,15 @@ CD-01B-3에서 `--show-managed-fields=true`로 확인한 아래 값은 Deploymen
 
 이 값은 현재 원본 이미지의 소스 `39c0e2c`를 증명하지 않는다. 과거 이력을 지우지 않기 위해 `dev-rollback/metadata.patch.yaml`에서만 정확한 기존 값을 유지한다. Pod template annotation은 추가하거나 변경하지 않는다. 기존 `Prune=false,Delete=false`도 보존한다.
 
-GHCR 전환 시에는 실제 이미지 provenance를 별도로 검증하고 새 `image-tag`/`source-revision`, 검사 정책, 예상 metadata 변경을 같은 승인에 포함한다. 현재 GHCR 후보 overlay에는 이 과거 값을 복제하지 않았으므로 후보가 렌더된다는 사실만으로 Sync를 승인할 수 없다. 기존 이력은 전환 직전의 로컬 증거로 보존한다.
+GHCR 후보 `dev/deployment-contract.patch.yaml`은 아래 두 값을 Deployment 최상위 metadata에 명시한다. 이는 원본 이력의 삭제나 복제가 아니라 승인 대상 후보 이미지의 출처를 기록하기 위한 값 교체다.
+
+| 키 | GHCR 후보 값 |
+|---|---|
+| `deployment.datacenter/image-tag` | `ghcr.io/shinsangseok/datacenter-api:sha-abd44eb3fe4ef248f2df2e0cf9bab050055d181a-40211788456-1` |
+| `deployment.datacenter/source-revision` | `abd44eb3fe4ef248f2df2e0cf9bab050055d181a` |
+
+컨테이너 이미지 참조는 `ghcr.io/shinsangseok/datacenter-api@sha256:930692df197f2579aa73aec466782808de4f94cb70add1f6c95713dbf6cfc113`으로 고정한다. 태그는 이력 정보이며 digest 대신 사용하지 않는다. 위 출처는 [CI-03B 게시 실행](https://github.com/Shinsangseok/datacenter-project/actions/runs/40211788456) 및 GHCR index/config 메타데이터와 대조한 값이다. 이미지 revision label 일치는 서명된 provenance 검증과 구분한다.
+
+과거 두 값은 변경하지 않은 `dev-rollback/metadata.patch.yaml`과 전환 직전의 로컬 증거에 보존한다. 실제 rollback은 원본 이미지/Never와 함께 과거 값을 복원해야 한다. Pod template metadata는 양쪽에서 변경하지 않는다. 안전 검사는 후보와 rollback 각각의 정확한 값 및 image/pullPolicy 외 spec 차이 0을 강제한다.
+
+이 정적 계약의 PASS는 PR 병합 또는 Sync 승인이 아니다. 별도 병합 승인 후 새 squash SHA를 고정하고 실제 Argo Live/predicted Diff와 managedFields를 확인해야 한다. Annotation 값 교체 외 삭제·추가, 예상 밖 소유권 또는 spec 변경이 있으면 HOLD한다. `ignoreDifferences`로 차이를 숨기지 않는다.

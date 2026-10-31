@@ -27,6 +27,10 @@ PROTECTED = {
     "deployment.datacenter/image-tag": "datacenter-api:git-a647d80",
     "deployment.datacenter/source-revision": "a647d80dd4f230b26a2fc249994e5d4c4254fd44",
 }
+CANDIDATE_PROVENANCE = {
+    "deployment.datacenter/image-tag": "ghcr.io/shinsangseok/datacenter-api:sha-abd44eb3fe4ef248f2df2e0cf9bab050055d181a-40211788456-1",
+    "deployment.datacenter/source-revision": "abd44eb3fe4ef248f2df2e0cf9bab050055d181a",
+}
 SYNC_KEY = "argocd.argoproj.io/sync-options"
 SYNC_VALUE = "Prune=false,Delete=false"
 TRACKING_KEY = "argocd.argoproj.io/tracking-id"
@@ -128,7 +132,7 @@ def expected_spec(image=CANDIDATE, policy="IfNotPresent"):
 
 
 def expected_deployment(rollback=False):
-    annotations = {SYNC_KEY: SYNC_VALUE, **(PROTECTED if rollback else {})}
+    annotations = {SYNC_KEY: SYNC_VALUE, **(PROTECTED if rollback else CANDIDATE_PROVENANCE)}
     return {"apiVersion": "apps/v1", "kind": "Deployment",
             "metadata": {"name": NAME, "namespace": NS, "annotations": annotations},
             "spec": expected_spec(ROLLBACK, "Never") if rollback else expected_spec()}
@@ -251,7 +255,7 @@ def check(repo, live_snapshot=None):
     revision = validate_controls(argo)
     result = {"status": "PASS", "static": "PASS", "yaml_files": count, "revision": revision,
               "live_comparison": "NOT_RUN", "actual_argo_apply": "UNVERIFIED", "sync_authorized": False,
-              "candidate_provenance": "BLOCKED_REQUIRES_SEPARATE_IMAGE_AND_PROVENANCE_APPROVAL"}
+              "candidate_provenance": "STATIC_CONTRACT_VERIFIED_EXECUTION_NOT_AUTHORIZED"}
     if live_snapshot is not None:
         evidence_path(Path(live_snapshot))
         path = Path(live_snapshot).resolve()

@@ -181,6 +181,53 @@ class GitOpsSafetyTests(unittest.TestCase):
         doc["metadata"]["annotations"].update(safety.PROTECTED)
         self.assert_denied(safety.validate_deployment, doc)
 
+    def candidate_fixture(self):
+        doc = safety.expected_deployment()
+        # Provenance expectations are independent of the validator constants.
+        doc["metadata"]["annotations"] = {
+            "argocd.argoproj.io/sync-options": "Prune=false,Delete=false",
+            "deployment.datacenter/image-tag": "ghcr.io/shinsangseok/datacenter-api:sha-abd44eb3fe4ef248f2df2e0cf9bab050055d181a-40211788456-1",
+            "deployment.datacenter/source-revision": "abd44eb3fe4ef248f2df2e0cf9bab050055d181a",
+        }
+        return doc
+
+    def test_candidate_exact_published_provenance_passes(self):
+        safety.validate_deployment(self.candidate_fixture())
+
+    def test_candidate_missing_or_wrong_provenance_fails(self):
+        for key in ("deployment.datacenter/image-tag", "deployment.datacenter/source-revision"):
+            for value in (None, "unapproved"):
+                with self.subTest(key=key, value=value):
+                    doc = self.candidate_fixture()
+                    if value is None:
+                        del doc["metadata"]["annotations"][key]
+                    else:
+                        doc["metadata"]["annotations"][key] = value
+                    self.assert_denied(safety.validate_deployment, doc)
+
+    def test_candidate_provenance_does_not_authorize_pod_metadata(self):
+        doc = self.candidate_fixture()
+        doc["spec"]["template"]["metadata"]["annotations"] = dict(doc["metadata"]["annotations"])
+        self.assert_denied(safety.validate_deployment, doc)
+
+    def test_rollback_preserves_legacy_provenance_and_rejects_candidate(self):
+        doc = safety.expected_deployment(True)
+        expected = {
+            "argocd.argoproj.io/sync-options": "Prune=false,Delete=false",
+            "deployment.datacenter/image-tag": "datacenter-api:git-a647d80",
+            "deployment.datacenter/source-revision": "a647d80dd4f230b26a2fc249994e5d4c4254fd44",
+        }
+        self.assertEqual(doc["metadata"]["annotations"], expected)
+        safety.validate_deployment(doc, rollback=True)
+        doc["metadata"]["annotations"] = self.candidate_fixture()["metadata"]["annotations"]
+        self.assert_denied(safety.validate_deployment, doc, rollback=True)
+
+    def test_candidate_and_rollback_spec_differ_only_at_image_and_policy(self):
+        self.assertEqual(safety.differing_paths(safety.expected_deployment(True)["spec"], self.candidate_fixture()["spec"]), [
+            "/template/spec/containers/0/image",
+            "/template/spec/containers/0/imagePullPolicy",
+        ])
+
     def write_source(self, root, content):
         path = root / "gitops" / "kustomization.yaml"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -322,6 +369,9 @@ class GitOpsSafetyTests(unittest.TestCase):
                 result = safety.check(root)
                 self.assertEqual(result["static"], "PASS")
                 self.assertEqual(result["live_comparison"], "NOT_RUN")
+                self.assertEqual(result["candidate_provenance"], "STATIC_CONTRACT_VERIFIED_EXECUTION_NOT_AUTHORIZED")
+                self.assertEqual(result["actual_argo_apply"], "UNVERIFIED")
+                self.assertIs(result["sync_authorized"], False)
                 for call in run.call_args_list:
                     self.assertEqual(call.args[0][:2], ["/tools/kustomize", "build"])
 

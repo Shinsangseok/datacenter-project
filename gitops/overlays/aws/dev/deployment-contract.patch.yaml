@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: datacenter-api
+  annotations:
+    deployment.datacenter/image-tag: ghcr.io/shinsangseok/datacenter-api:sha-abd44eb3fe4ef248f2df2e0cf9bab050055d181a-40211788456-1
+    deployment.datacenter/source-revision: abd44eb3fe4ef248f2df2e0cf9bab050055d181a
 spec:
   template:
     spec:
