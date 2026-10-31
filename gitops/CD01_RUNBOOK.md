@@ -40,6 +40,17 @@ kubectl kustomize gitops/argocd/dev
 
 원본 이미지 캐시, 대상 UID, Worker 배치가 달라지면 자동 확대 변경하지 않고 HOLD한다. 복구 후 Ready/Endpoint/재시작과 DEV/PROD·MLflow·ServiceLB를 재확인한다. image rollback은 DB·모델 데이터 변경을 복구하지 않는다. PVC/Secret/Service/Gateway/PROD를 rollback 대상으로 삼지 않으며 Namespace/CRD 일괄 삭제는 금지한다.
 
+## CD-01C2: GHCR 후보 검증과 원본 이미지 복귀
+
+1. 후보 metadata 변경 PR의 정확한 head SHA에 대해 Safety CI를 확인한다. 배포 승인을 PR 병합 승인으로 해석하지 않는다. 별도 병합 승인 전에는 Application source/revision, 계정, RBAC, Sync Window를 바꾸지 않는다. 승인 후 실제 새 squash SHA를 기록하고 두 overlay를 그 SHA로 고정한다.
+2. `dev`의 이력 annotation은 [소유권 문서](references/aws-dev/OWNERSHIP.md)의 GHCR 태그와 앱 소스 `abd44eb3fe4ef248f2df2e0cf9bab050055d181a`여야 한다. 새 GitOps squash SHA와 앱 소스 SHA를 혼동하지 않는다. `dev-rollback`은 기존 과거 이력 두 값을 유지한다.
+3. 실제 Argo Diff에서 후보 변경을 image, imagePullPolicy 및 검토된 Deployment 최상위 이력 annotation 두 값으로 제한한다. Pod template metadata, Worker 배치, Probe/Resource, Secret/ConfigMap 참조 및 다른 spec 변경은 거부한다. 기존 `snapshot/check --live-snapshot`은 원본 이미지의 인수 검증 계약이므로 GHCR 실행 상태의 일반 검증기로 사용하거나 이를 위해 검사를 완화하지 않는다.
+4. Worker에서 후보 digest의 실제 Pull 가능성·디스크와 원본 캐시를 확인한다. 기존 최소 권한 및 회수 절차를 재사용하고, 실제 배포 직전 운영 Gate·독립 복구 접근·비노출 운영자 입력이 준비된 경우에만 후보 수동 Sync를 1회 수행한다. Auto Sync/Prune/SelfHeal, Force/Replace는 사용하지 않는다.
+5. Recreate/replicas=1에 따른 실제 중단 시간을 기록한다. 사전에 확정한 기동/복구 기한 안에 Worker Ready, HTTP health/ready, Endpoint, RDS TLS/auth 및 DEV MLflow 모델 로딩을 확인한다. 추론은 후보 앱의 실제 HTTP 계약에서 쓰기 없는 경로가 확인될 때만 수행한다. INSERT를 수행하는 `/predict`를 쓰기 금지 검증에 사용하거나 테스트 성공으로 대체하지 않는다. 쓰기 없는 검증 경로가 확인되지 않으면 HOLD하고 별도 방안을 검토한다. 앱 코드, DB/모델 데이터는 변경하지 않는다.
+6. 후보가 정상이어도 승인된 `dev-rollback` Source로 수동 Sync 1회 후 원본 digest/Never, 과거 annotation, Worker Ready, HTTP health/ready 및 Endpoint를 확인한다. Argo 실패 시 검증한 독립 Kubernetes 복구 경로를 사용하되 대상 UID/spec/이미지 기준과 최소 권한을 넘지 않는다. 실제 복구가 확인돼야 rollback PASS다.
+7. 성공/실패 모두 진행 중 Operation 상태와 정리 순서를 확인하고 임시 권한·토큰을 회수한다. `dev-operator` 비활성화, 임시 sync mapping 제거, Deny Window/manualSync=false 및 Controller 쓰기 거부를 확인한다. 정상 종료는 원본 이미지와 `dev-rollback`, Synced/Healthy이며 GHCR을 다시 적용하지 않는다.
+
+
 
 ## CD-01B-3: S1–S5 실행 Gate
 
