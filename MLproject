@@ -1,0 +1,19 @@
+name: datacenter-anomaly-training
+
+entry_points:
+  train:
+    parameters:
+      n_estimators: {type: int, default: 100}
+      max_depth: {type: int, default: 10}
+      class_weight: {type: string, default: balanced}
+      random_state: {type: int, default: 42}
+      test_size: {type: float, default: 0.2}
+      n_jobs: {type: int, default: 2}
+    command: >-
+      python train_model.py
+      --n-estimators {n_estimators}
+      --max-depth {max_depth}
+      --class-weight {class_weight}
+      --random-state {random_state}
+      --test-size {test_size}
+      --n-jobs {n_jobs}

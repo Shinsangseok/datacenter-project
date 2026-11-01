@@ -1,0 +1,7 @@
+# MLflow tracking, Auth import tests, training and offline backup SDK tests.
+# FastAPI uses requirements-inference.txt.
+-r requirements.txt
+mlflow[auth]==3.16.1
+
+# Backup helper and versioned/SSE-KMS S3 contract validation.
+boto3==1.43.123
