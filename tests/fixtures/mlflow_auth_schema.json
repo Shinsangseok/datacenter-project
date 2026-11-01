@@ -1,0 +1,765 @@
+{
+  "catalog": {
+    "collations": {
+      "latin1_swedish_ci": "latin1",
+      "utf8mb4_0900_ai_ci": "utf8mb4",
+      "utf8mb4_bin": "utf8mb4",
+      "utf8mb4_unicode_ci": "utf8mb4"
+    },
+    "defaults": {
+      "latin1": "latin1_swedish_ci",
+      "utf8mb4": "utf8mb4_0900_ai_ci"
+    }
+  },
+  "database_defaults": [
+    "utf8mb4",
+    "utf8mb4_unicode_ci"
+  ],
+  "description": "Reviewed Auth schema only; no credentials, endpoints, or table data. Expected DDL independently reconstructed from lab and checked against pre-migration raw hashes.",
+  "tables": {
+    "alembic_version_auth": {
+      "actual_ddl": "CREATE TABLE `alembic_version_auth` (\n  `version_num` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,\n  PRIMARY KEY (`version_num`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "version_num",
+          "column_type": "varchar(32)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `alembic_version_auth` (\n  `version_num` varchar(32) NOT NULL,\n  PRIMARY KEY (`version_num`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "65c101b12233ff9ad7d9f2d4b164266b3e9527a4e028b4d8f99437580b573d96",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "alembic_version_auth",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "experiment_permissions": {
+      "actual_ddl": "CREATE TABLE `experiment_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `experiment_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_experiment_user` (`experiment_id`,`user_id`),\n  KEY `fk_experiment_permissions_user_id` (`user_id`),\n  CONSTRAINT `fk_experiment_permissions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "experiment_id",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 4
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `experiment_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `experiment_id` varchar(255) NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_experiment_user` (`experiment_id`,`user_id`),\n  KEY `fk_experiment_permissions_user_id` (`user_id`),\n  CONSTRAINT `fk_experiment_permissions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "5a2bcc50bb10cc1db64e59ea273233082e9dd94c107d71405931fb3884baa7c4",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "experiment_permissions",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "gateway_endpoint_permissions": {
+      "actual_ddl": "CREATE TABLE `gateway_endpoint_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `endpoint_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_endpoint_user` (`endpoint_id`,`user_id`),\n  KEY `fk_gateway_endpoint_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_gateway_endpoint_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "endpoint_id",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 4
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `gateway_endpoint_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `endpoint_id` varchar(255) NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_endpoint_user` (`endpoint_id`,`user_id`),\n  KEY `fk_gateway_endpoint_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_gateway_endpoint_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "cbb2e49ce37c0e08d5d01327ebfdf6d47f61dd3cb2b70238924a9e05d33dc75e",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "gateway_endpoint_permissions",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "gateway_model_definition_permissions": {
+      "actual_ddl": "CREATE TABLE `gateway_model_definition_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `model_definition_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_model_def_user` (`model_definition_id`,`user_id`),\n  KEY `fk_gateway_model_def_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_gateway_model_def_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "model_definition_id",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 4
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `gateway_model_definition_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `model_definition_id` varchar(255) NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_model_def_user` (`model_definition_id`,`user_id`),\n  KEY `fk_gateway_model_def_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_gateway_model_def_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "c45fe9c0635656f489cce84c12bbe3c814e8dfb922de60e09fd0eb84e85f9b92",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "gateway_model_definition_permissions",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "gateway_secret_permissions": {
+      "actual_ddl": "CREATE TABLE `gateway_secret_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `secret_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_secret_user` (`secret_id`,`user_id`),\n  KEY `fk_gateway_secret_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_gateway_secret_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "secret_id",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 4
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `gateway_secret_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `secret_id` varchar(255) NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_secret_user` (`secret_id`,`user_id`),\n  KEY `fk_gateway_secret_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_gateway_secret_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "dec8b8e9140ba74a51855b354b404911844f504c3713d3721e4e086fe13eaba0",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "gateway_secret_permissions",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "registered_model_permissions": {
+      "actual_ddl": "CREATE TABLE `registered_model_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `workspace` varchar(63) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default',\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_workspace_name_user` (`workspace`,`name`,`user_id`),\n  KEY `fk_registered_model_permissions_user_id` (`user_id`),\n  CONSTRAINT `fk_registered_model_permissions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "name",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 4
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": "default",
+          "column_name": "workspace",
+          "column_type": "varchar(63)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 5
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `registered_model_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(255) NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) DEFAULT NULL,\n  `workspace` varchar(63) NOT NULL DEFAULT 'default',\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_workspace_name_user` (`workspace`,`name`,`user_id`),\n  KEY `fk_registered_model_permissions_user_id` (`user_id`),\n  CONSTRAINT `fk_registered_model_permissions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "097db949d8c29816d0c345607eee55bdcbea55f725bf133d6e8f6225b4b5215e",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "registered_model_permissions",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "role_permissions": {
+      "actual_ddl": "CREATE TABLE `role_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `role_id` int NOT NULL,\n  `resource_type` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `resource_pattern` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `permission` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_role_resource_perm` (`role_id`,`resource_type`,`resource_pattern`),\n  KEY `idx_role_permissions_role_id` (`role_id`),\n  CONSTRAINT `role_permissions_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "role_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "resource_type",
+          "column_type": "varchar(64)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "resource_pattern",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 4
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 5
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `role_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `role_id` int NOT NULL,\n  `resource_type` varchar(64) NOT NULL,\n  `resource_pattern` varchar(255) NOT NULL,\n  `permission` varchar(255) NOT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_role_resource_perm` (`role_id`,`resource_type`,`resource_pattern`),\n  KEY `idx_role_permissions_role_id` (`role_id`),\n  CONSTRAINT `role_permissions_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "2ff404fc2c40d40e2af14e03cb180a12349c8be91540a8eeafe434917bb3d7f6",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "role_permissions",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "roles": {
+      "actual_ddl": "CREATE TABLE `roles` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `workspace` varchar(63) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `description` varchar(1024) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_workspace_role_name` (`workspace`,`name`),\n  KEY `idx_roles_workspace` (`workspace`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "name",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "workspace",
+          "column_type": "varchar(63)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "description",
+          "column_type": "varchar(1024)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 4
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `roles` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(255) NOT NULL,\n  `workspace` varchar(63) NOT NULL,\n  `description` varchar(1024) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_workspace_role_name` (`workspace`,`name`),\n  KEY `idx_roles_workspace` (`workspace`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "c2cda36b438b5f0aeb7daca82db2475d40a9856cc8b467c7d936aae34daeb1dd",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "roles",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "scorer_permissions": {
+      "actual_ddl": "CREATE TABLE `scorer_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `experiment_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `scorer_name` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_scorer_user` (`experiment_id`,`scorer_name`,`user_id`),\n  KEY `fk_scorer_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_scorer_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "experiment_id",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "scorer_name",
+          "column_type": "varchar(256)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 4
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 5
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `scorer_permissions` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `experiment_id` varchar(255) NOT NULL,\n  `scorer_name` varchar(256) NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(255) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_scorer_user` (`experiment_id`,`scorer_name`,`user_id`),\n  KEY `fk_scorer_perm_user_id` (`user_id`),\n  CONSTRAINT `fk_scorer_perm_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "5da4707fbf57b23359f090b81207d2bbb4413a8257be40f49804a6774db73121",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "scorer_permissions",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "user_role_assignments": {
+      "actual_ddl": "CREATE TABLE `user_role_assignments` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `user_id` int NOT NULL,\n  `role_id` int NOT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_user_role` (`user_id`,`role_id`),\n  KEY `idx_user_role_assignments_user_id` (`user_id`),\n  KEY `idx_user_role_assignments_role_id` (`role_id`),\n  CONSTRAINT `user_role_assignments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT `user_role_assignments_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "role_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `user_role_assignments` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `user_id` int NOT NULL,\n  `role_id` int NOT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `unique_user_role` (`user_id`,`role_id`),\n  KEY `idx_user_role_assignments_user_id` (`user_id`),\n  KEY `idx_user_role_assignments_role_id` (`role_id`),\n  CONSTRAINT `user_role_assignments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),\n  CONSTRAINT `user_role_assignments_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "995a5d98874b5df163efca93356cbe069aac2ffe034d05e2bb4a92a1a98f4f02",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "user_role_assignments",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "users": {
+      "actual_ddl": "CREATE TABLE `users` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `username` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `is_admin` tinyint(1) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `username` (`username`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "id",
+          "column_type": "int",
+          "extra": "auto_increment",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "username",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "password_hash",
+          "column_type": "varchar(255)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 3
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "is_admin",
+          "column_type": "tinyint(1)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "YES",
+          "ordinal_position": 4
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `users` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `username` varchar(255) DEFAULT NULL,\n  `password_hash` varchar(255) DEFAULT NULL,\n  `is_admin` tinyint(1) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `username` (`username`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "7e605e4bf383f9458f077f8943a6815506cf588f4da32584acfdd2747bf7fd1c",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "users",
+        "table_type": "BASE TABLE"
+      }
+    },
+    "workspace_permissions": {
+      "actual_ddl": "CREATE TABLE `workspace_permissions` (\n  `workspace` varchar(63) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,\n  PRIMARY KEY (`workspace`,`user_id`),\n  KEY `idx_workspace_permissions_user_id` (`user_id`),\n  KEY `idx_workspace_permissions_workspace` (`workspace`),\n  CONSTRAINT `workspace_permissions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "columns": [
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "workspace",
+          "column_type": "varchar(63)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 1
+        },
+        {
+          "character_set_name": null,
+          "collation_name": null,
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "user_id",
+          "column_type": "int",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 2
+        },
+        {
+          "character_set_name": "utf8mb4",
+          "collation_name": "utf8mb4_unicode_ci",
+          "column_comment": "",
+          "column_default": null,
+          "column_name": "permission",
+          "column_type": "varchar(32)",
+          "extra": "",
+          "generation_expression": "",
+          "is_nullable": "NO",
+          "ordinal_position": 3
+        }
+      ],
+      "expected_ddl": "CREATE TABLE `workspace_permissions` (\n  `workspace` varchar(63) NOT NULL,\n  `user_id` int NOT NULL,\n  `permission` varchar(32) NOT NULL,\n  PRIMARY KEY (`workspace`,`user_id`),\n  KEY `idx_workspace_permissions_user_id` (`user_id`),\n  KEY `idx_workspace_permissions_workspace` (`workspace`),\n  CONSTRAINT `workspace_permissions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "legacy_expected_schema_hash": "cacc145c9ee80dfc8d481097d979730dac06087c232c62907e88e31e3dfbef93",
+      "table": {
+        "create_options": "",
+        "engine": "InnoDB",
+        "row_format": "Dynamic",
+        "table_collation": "utf8mb4_unicode_ci",
+        "table_comment": "",
+        "table_name": "workspace_permissions",
+        "table_type": "BASE TABLE"
+      }
+    }
+  }
+}

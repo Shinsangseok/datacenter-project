@@ -1,0 +1,12 @@
+{
+  "dev": {
+    "mode": "development",
+    "tracking_database": "mlflow_tracking_dev",
+    "auth_database": "mlflow_auth_dev"
+  },
+  "prod": {
+    "mode": "production",
+    "tracking_database": "mlflow",
+    "auth_database": "mlflow_auth_prod_v1"
+  }
+}

@@ -2,7 +2,7 @@
 
 CPU·메모리·온도·전력 측정값을 시뮬레이션하고, FastAPI와 머신러닝으로 이상을 탐지하는 프로젝트입니다. AWS K3s에서 DEV/PROD를 분리하고 MLflow, Airflow, 모니터링, CI 및 GitOps를 단계적으로 연결해 운영·복구 절차를 학습합니다. Dify와 Amazon Bedrock은 운영자가 요청한 장애 분석을 보조합니다.
 
-> **현황 기준: 2026-10-31.** 기존 구축 보고서와 공개 소스를 대조한 문서입니다. 아래 검증 결과는 명시된 시점과 범위의 기록이며, 현재 서비스 상태를 상시 보증하지 않습니다. 실제 접속 주소·계정·인증정보는 공개하지 않습니다.
+> **구축 기록 기준: 2026-10-31 / 소스 통합 검토: 2026-11-01.** 아래 운영 검증 결과는 명시된 시점과 범위의 기록이며, 현재 서비스 상태를 상시 보증하지 않습니다. MLflow 추가 소스는 별도 검토용 후보이며 실제 배포·DB Migration·Worker 이전을 수행하지 않았습니다. 실제 접속 주소·계정·인증정보는 공개하지 않습니다.
 
 ## 현재 구축 현황
 
@@ -11,7 +11,7 @@ CPU·메모리·온도·전력 측정값을 시뮬레이션하고, FastAPI와 �
 | AWS K3s | Server와 DEV Worker의 2개 노드 구성, Worker Join·Pod 네트워크 검증 완료 | Kubernetes control plane은 단일 Server. 다중 control-plane HA 구성 아님 |
 | DEV FastAPI | Worker 이전 완료. 기존 이미지의 상태 확인·RDS 인증·모델 추론 및 저장 검증 완료 | GHCR 후보 이미지의 실행 검증과 구분 |
 | PROD FastAPI | 기존 Server 배치 유지, HPA 사용 | 과거 기동 실패의 인프라 근본 원인 전체가 해결됐다는 의미는 아님 |
-| MLflow Tracking / Registry | DEV/PROD 인스턴스 분리, 두 인스턴스 모두 Server 유지 | DEV MLflow Worker 이전은 이미지·DB 인증·Artifact 저장소 준비 후 별도 수행 |
+| MLflow Tracking / Registry | 기존 기록상 DEV/PROD 인스턴스 분리, 두 인스턴스 모두 Server 유지. 환경별 Auth·Registry·학습 소스를 선별 통합 | 추가 소스의 live E2E·PROD Auth 승격·DEV MLflow Worker 이전은 미실행 |
 | Airflow | 공용 워크플로 Control Plane과 DEV/PROD 작업 Namespace 구분. 기존 API server·scheduler·DAG processor 구성 확인 | DAG·배포 정의는 현재 main에 미포함. 최신 DAG E2E 성공을 이 문서에서 판정하지 않음 |
 | GitHub Actions / GHCR | 오프라인 CI 및 수동 후보 이미지 게시·digest 검증 완료 | 이미지 게시가 Kubernetes 배포를 의미하지 않음 |
 | Argo CD | 설치 및 기존 DEV Deployment의 최초 수동 Sync 완료 | GHCR 이미지 전환·해당 이미지의 수동 Rollback 실증은 보류 |
@@ -71,6 +71,12 @@ MLflow는 실험의 파라미터·지표·Artifact를 관리하는 Tracking과 �
 DEV MLflow Artifact는 Server에 고정된 `local-path` PVC에 있습니다. `RWO`, 10Gi 용량, `Delete` reclaim policy이므로 Deployment의 Node만 바꾸는 방식으로 이전할 수 없습니다. 마지막 조사에서 Artifact 16개, 약 3.27MiB를 확인했으며, 이는 당시 스냅샷입니다.
 
 이전에는 쓰기 일관성 확보, 원본 백업, Worker 저장소·이미지·DB 인증 준비, 파일별 checksum·권한 비교, 새 쓰기 이후의 롤백 데이터 보존이 필요합니다. 원본 PVC/PV는 검증 전에 삭제하지 않습니다. Airflow 작업과 MLflow 메타데이터·Artifact의 연계도 별도 E2E 검증 대상입니다.
+
+### MLflow 소스 통합 범위
+
+이 통합 후보는 최신 main의 FastAPI 계약과 CI·GHCR·GitOps 설정을 유지하며 MLflow 학습·Projects, 공통 Auth guard, 환경별 구성과 관련 테스트를 추가합니다. 기존 기본 로컬 모델 경로와 명시적으로 선택하는 Registry 경로를 구분합니다. 학습·Projects 실행은 명시적인 Tracking URI가 필요하며 승인된 별도 쓰기 작업입니다. Registry 로딩은 고정 Version 1만 허용하며 실패 시 로컬 모델이나 다른 환경으로 자동 전환하지 않습니다. Auth는 허용 목록과 자원별 권한을 함께 검사하며, 대응하는 권한 검증기가 없는 요청도 거부합니다.
+
+`k8s/overlays/dev`와 `k8s/overlays/prod`는 **미적용 검토 후보**입니다. 운영 중인 Secret·PVC·DB와 동일한 상태라고 가정하거나 전체 overlay를 적용하지 않습니다. Migration·bootstrap Job은 중지된 선언이며 실행·DB 변경·PROD Auth 활성화에는 별도 검증과 승인이 필요합니다. 이미지 digest는 이전 후보의 식별자이며 이번 통합 commit의 빌드·배포 증거가 아닙니다. 자세한 범위와 미검증 사항은 [MLflow 통합 검토](docs/mlflow/integration-review.md)를 참고하세요.
 
 ### 합성 데이터 학습 기록
 
@@ -191,8 +197,8 @@ Mock·정적 검사, 제한된 운영 관찰, 실제 E2E는 서로 다른 근거
 후속 검토 항목은 Dify HTTP 인증 전송, legacy 외부 Service/API 인증 경계, 빌드 의존성·base image 고정, ServiceAccount token·seccomp 보강입니다. 저장소 선언만으로 실제 운영 노출이나 침해를 확정하지 않습니다. 보안 위험을 숨기기 위해 과거 실습 파일을 삭제하지 않았으며, 수정은 별도 검토와 승인 대상으로 둡니다.
 
 - 비밀번호·Token·Secret data·개인키·kubeconfig·실제 운영 접속 정보는 README에 넣지 않습니다.
-- 기존 `k8s/`는 실습·과거 구성이고 현재 AWS Live와 일치하지 않을 수 있습니다. 디렉터리 전체를 운영 클러스터에 재적용하지 않습니다.
-- 공개 main, 미병합 작업 브랜치, 현재 운영 이미지가 동일한 버전이라고 가정하지 않습니다. 특히 MLflow 브랜치 전체 병합은 별도 선별 검토 대상입니다.
+- `k8s/`에는 초기 실습·호환 구성과 미적용 MLflow 통합 후보가 함께 있습니다. 현재 AWS Live와 일치한다고 가정하지 않으며, 디렉터리 전체를 운영 클러스터에 재적용하지 않습니다.
+- 공개 main, 미병합 작업 브랜치, 현재 운영 이미지가 동일한 버전이라고 가정하지 않습니다. MLflow 작업 브랜치 전체를 병합하지 않고 필요한 소스를 최신 main 위에서 선별 검토합니다. 기존 Draft PR #7과 로컬 추가 작업은 보존 대상입니다.
 
 ## 저장소 안내와 후속 GKE 계획
 
@@ -203,10 +209,10 @@ Mock·정적 검사, 제한된 운영 관찰, 실제 E2E는 서로 다른 근거
 | `tests/` | 오프라인 Mock·구조·GitOps 안전성 검사 |
 | `.github/workflows/` | CI와 수동 GHCR 게시 |
 | `gitops/` | DEV 후보/기존 이미지 overlay, Application/Project, 승인·복구 절차 |
-| `k8s/`, `grafana/` | 초기 배포·모니터링 설정과 학습 자료 |
+| `k8s/`, `grafana/` | 초기 배포·모니터링 자료와 미적용 MLflow DEV/PROD 후보 |
 | `docs/` | 과거 설계·실험·연동 문서. 작성 시점을 함께 확인 |
 
-Airflow DAG·환경별 MLflow 운영 정의와 일부 로컬 로드맵은 현재 main에 모두 반영되어 있지 않습니다. 공개되지 않은 로컬 경로를 재현 가능한 실행 자료처럼 링크하지 않습니다.
+환경별 MLflow 소스 정의는 이번 통합 후보에 포함되며 운영 배포 상태와는 구분합니다. Airflow DAG와 일부 로컬 추가 작업·로드맵은 이 통합 범위에 포함하지 않습니다. 공개되지 않은 로컬 경로를 재현 가능한 실행 자료처럼 링크하지 않습니다.
 
 후속 작업은 다음 순서로 검토합니다.
 

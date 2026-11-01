@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api
+  namespace: datacenter-app
+spec:
+  template:
+    spec:
+      containers:
+      - name: datacenter-api
+        env:
+        - name: DB_EXPECTED_NAME
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-target-policy
+              key: DB_EXPECTED_NAME
