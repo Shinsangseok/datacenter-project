@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: mlflow-dev
+resources:
+- ../../../base/mlflow
+- ../../../base/rds-ca
+patches:
+- path: config.patch.yaml
+configMapGenerator:
+- name: mlflow-auth-policy
+  files:
+  - policy.json
+  - checkpoints.json
+components:
+- ../../../components/mlflow-auth

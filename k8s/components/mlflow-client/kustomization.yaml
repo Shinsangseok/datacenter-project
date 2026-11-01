@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+- path: deployment.patch.yaml
+images:
+- name: datacenter-api
+  newName: docker.io/library/datacenter-api
+  newTag: git-a647d80
+  digest: sha256:7f8e22800304d641930283c95be2b5d34325af8fab72f79b3851ff445e6b646e

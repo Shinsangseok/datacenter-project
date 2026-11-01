@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datacenter-api-config
+  namespace: datacenter-app
+data:
+  MLFLOW_ENV: prod
+  DB_SSL_CA: /etc/datacenter/certs/global-bundle.pem
+  MODEL_SOURCE: registry
+  MLFLOW_MODEL_NAME: datacenter-anomaly-detector
+  MLFLOW_MODEL_VERSION: '1'
+  MLFLOW_TRACKING_URI: http://mlflow.mlflow.svc.cluster.local:5000

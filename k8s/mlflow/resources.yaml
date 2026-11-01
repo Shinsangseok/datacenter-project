@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlflow
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlflow-artifacts
+  namespace: mlflow
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlflow-config
+  namespace: mlflow
+data:
+  DB_PORT: "3306"
+  DB_NAME: mlflow
+  MLFLOW_MYSQL_SSL_CA: /etc/mlflow/certs/global-bundle.pem
+  MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow:5000,mlflow.mlflow:5000,mlflow.mlflow.svc:5000,mlflow.mlflow.svc.cluster.local:5000,localhost:5000,127.0.0.1:5000"
+  MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
+  MLFLOW_DISABLE_AGENT_HINT: "1"
+  MLFLOW_DISABLE_TELEMETRY: "true"
+  PYTHONDONTWRITEBYTECODE: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  namespace: mlflow
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mlflow
+          image: ghcr.io/mlflow/mlflow:v3.16.1-full@sha256:6af326440af64565c2ea5d1d28c9ee355f70a8d4af5b76e35938365e1ce2e428
+          imagePullPolicy: IfNotPresent
+          workingDir: /tmp
+          command: [python, /opt/mlflow/launcher.py]
+          envFrom:
+            - configMapRef:
+                name: mlflow-config
+            - secretRef:
+                name: mlflow-runtime-db
+          ports:
+            - name: http
+              containerPort: 5000
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost:5000
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost:5000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost:5000
+            periodSeconds: 20
+            failureThreshold: 3
+          volumeMounts:
+            - name: artifacts
+              mountPath: /mlflow/artifacts
+            - name: launcher
+              mountPath: /opt/mlflow
+              readOnly: true
+            - name: ca
+              mountPath: /etc/mlflow/certs
+              readOnly: true
+      volumes:
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: mlflow-artifacts
+        - name: launcher
+          configMap:
+            name: mlflow-launcher
+        - name: ca
+          configMap:
+            name: mlflow-rds-ca
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+  namespace: mlflow
+spec:
+  type: ClusterIP
+  selector:
+    app: mlflow
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http

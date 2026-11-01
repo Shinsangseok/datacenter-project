@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: datacenter-api                    # 다른 Pod/서비스가 사용할 이름
+  namespace: datacenter-app               # FastAPI가 있는 Namespace
+spec:
+  type: LoadBalancer                      # K3s ServiceLB 사용
+  selector:
+    app: datacenter-api                   # 두 FastAPI Pod 모두 선택
+  ports:
+    - name: http
+      port: 8080                          # Service가 제공하는 포트
+      targetPort: 8000                    # 실제 FastAPI 컨테이너 포트
+      protocol: TCP
