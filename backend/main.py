@@ -2,7 +2,6 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, generate_latest
@@ -14,12 +13,24 @@ from starlette.responses import JSONResponse
 from backend.dify import run_analysis
 from backend.model_loader import load_model
 from backend.db_config import database_url
+from backend.inference import infer
+from backend.write_free_verifier import WriteFreeVerifier
 from backend.startup import (Failure, Startup, StartupError, validate_database,
                              configure_database_timeouts)
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 MODEL_PATH = BASE_DIR / "models" / "model.pkl"
+
+# Only activation settings cross into the verifier; no DB credentials or engine.
+write_free_verifier = WriteFreeVerifier({
+    key: os.environ[key]
+    for key in (
+        "WRITE_FREE_INFERENCE_ENABLED", "POD_NAMESPACE", "MLFLOW_ENV",
+        "MODEL_SOURCE", "WEB_CONCURRENCY", "UVICORN_WORKERS", "UVICORN_RELOAD",
+    )
+    if key in os.environ
+})
 
 startup = Startup()
 _database_url = startup.run('configuration', lambda: database_url(os.environ))
@@ -117,6 +128,26 @@ def validate_database_schema() -> None:
     app.state.startup_complete = True
 
 
+@app.on_event("startup")
+async def start_write_free_verifier() -> None:
+    # Registered after the existing schema/model gate; no second load or DB check.
+    try:
+        await write_free_verifier.start(
+            model_provider=lambda: model,
+            ready_provider=lambda: app.state.startup_complete,
+        )
+    except BaseException:
+        app.state.startup_complete = False
+        raise
+
+
+@app.on_event("shutdown")
+async def stop_write_free_verifier() -> None:
+    if write_free_verifier.enabled:
+        app.state.startup_complete = False
+    await write_free_verifier.stop()
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
@@ -147,18 +178,9 @@ def readiness() -> dict:
 
 @app.post("/predict")
 def predict(request: PredictRequest) -> dict:
-    features = pd.DataFrame(
-        [{
-            "cpu": request.cpu,
-            "memory": request.memory,
-            "temperature": request.temperature,
-            "power": request.power,
-        }]
-    )
-
-    predicted_label = int(model.predict(features)[0])
-    probability = float(model.predict_proba(features)[0][1])
-    prediction = "ANOMALY" if predicted_label == 1 else "NORMAL"
+    calculated = infer(model, request.cpu, request.memory, request.temperature, request.power)
+    prediction = calculated.prediction
+    probability = calculated.raw_probability
 
     measured_at = request.measured_at or datetime.now(timezone.utc)
 
