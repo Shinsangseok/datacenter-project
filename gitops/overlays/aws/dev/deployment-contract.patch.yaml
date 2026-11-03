@@ -3,8 +3,8 @@ kind: Deployment
 metadata:
   name: datacenter-api
   annotations:
-    deployment.datacenter/image-tag: ghcr.io/shinsangseok/datacenter-api:sha-abd44eb3fe4ef248f2df2e0cf9bab050055d181a-40211788456-1
-    deployment.datacenter/source-revision: abd44eb3fe4ef248f2df2e0cf9bab050055d181a
+    deployment.datacenter/image-tag: ghcr.io/shinsangseok/datacenter-api:sha-001aeaeb93cc80312e0de1890ecb46c7b4baca16-41401445661-1
+    deployment.datacenter/source-revision: 001aeaeb93cc80312e0de1890ecb46c7b4baca16
 spec:
   template:
     spec:
@@ -49,6 +49,17 @@ spec:
             secretKeyRef:
               key: DB_EXPECTED_USER
               name: datacenter-target-policy
+        - name: WRITE_FREE_INFERENCE_ENABLED
+          value: 'true'
+        - name: MLFLOW_ENV
+          value: dev
+        - name: MODEL_SOURCE
+          value: registry
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         envFrom:
         - configMapRef:
             name: datacenter-api-config
@@ -58,3 +69,4 @@ spec:
         - mountPath: /etc/datacenter/certs
           name: db-ca
           readOnly: true
+        image: ghcr.io/shinsangseok/datacenter-api@sha256:5358f946c6c4bc853af2687577257821699870ef5e3e9a8d148c68cecadd773c
