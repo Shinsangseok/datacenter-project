@@ -22,14 +22,14 @@ NAME = "datacenter-api"
 REPO_URL = "https://github.com/Shinsangseok/datacenter-project.git"
 SERVER = "https://kubernetes.default.svc"
 ROLLBACK = "docker.io/library/datacenter-api@sha256:3fd70c2d1e2ded77e496d3bbbb9f1a72730fb5e0d6c7ba3612c26d086deb079e"
-CANDIDATE = "ghcr.io/shinsangseok/datacenter-api@sha256:930692df197f2579aa73aec466782808de4f94cb70add1f6c95713dbf6cfc113"
+CANDIDATE = "ghcr.io/shinsangseok/datacenter-api@sha256:5358f946c6c4bc853af2687577257821699870ef5e3e9a8d148c68cecadd773c"
 PROTECTED = {
     "deployment.datacenter/image-tag": "datacenter-api:git-a647d80",
     "deployment.datacenter/source-revision": "a647d80dd4f230b26a2fc249994e5d4c4254fd44",
 }
 CANDIDATE_PROVENANCE = {
-    "deployment.datacenter/image-tag": "ghcr.io/shinsangseok/datacenter-api:sha-abd44eb3fe4ef248f2df2e0cf9bab050055d181a-40211788456-1",
-    "deployment.datacenter/source-revision": "abd44eb3fe4ef248f2df2e0cf9bab050055d181a",
+    "deployment.datacenter/image-tag": "ghcr.io/shinsangseok/datacenter-api:sha-001aeaeb93cc80312e0de1890ecb46c7b4baca16-41401445661-1",
+    "deployment.datacenter/source-revision": "001aeaeb93cc80312e0de1890ecb46c7b4baca16",
 }
 SYNC_KEY = "argocd.argoproj.io/sync-options"
 SYNC_VALUE = "Prune=false,Delete=false"
@@ -39,6 +39,14 @@ LAST_APPLIED = "kubectl.kubernetes.io/last-applied-configuration"
 REVISION_KEY = "deployment.kubernetes.io/revision"
 PATHS = ("gitops/overlays/aws/dev", "gitops/overlays/aws/dev-rollback", "gitops/argocd/dev")
 SCHEMA = "cd01b3-sanitized-deployment-v1"
+CANDIDATE_PATCH = "gitops/overlays/aws/dev/deployment-contract.patch.yaml"
+ROLLBACK_IMAGE_PATCH = "gitops/overlays/aws/dev-rollback/image.patch.yaml"
+CANDIDATE_ENV = [
+    {"name": "WRITE_FREE_INFERENCE_ENABLED", "value": "true"},
+    {"name": "MLFLOW_ENV", "value": "dev"},
+    {"name": "MODEL_SOURCE", "value": "registry"},
+    {"name": "POD_NAMESPACE", "valueFrom": {"fieldRef": {"apiVersion": "v1", "fieldPath": "metadata.namespace"}}},
+]
 
 
 class SafetyError(Exception):
@@ -131,15 +139,22 @@ def expected_spec(image=CANDIDATE, policy="IfNotPresent"):
     }
 
 
+def expected_candidate_spec():
+    # The original spec remains the independent Live/Rollback contract.
+    spec = expected_spec()
+    spec["template"]["spec"]["containers"][0]["env"].extend(copy.deepcopy(CANDIDATE_ENV))
+    return spec
+
+
 def expected_deployment(rollback=False):
     annotations = {SYNC_KEY: SYNC_VALUE, **(PROTECTED if rollback else CANDIDATE_PROVENANCE)}
     return {"apiVersion": "apps/v1", "kind": "Deployment",
             "metadata": {"name": NAME, "namespace": NS, "annotations": annotations},
-            "spec": expected_spec(ROLLBACK, "Never") if rollback else expected_spec()}
+            "spec": expected_spec(ROLLBACK, "Never") if rollback else expected_candidate_spec()}
 
 
 def validate_deployment(doc, rollback=False):
-    # Exact contracts deny new containers, hooks, literal env/args, references,
+    # Exact contracts deny unapproved containers, hooks, env/args, references,
     # service accounts, Pod annotations and privilege changes as well as images.
     exact(doc, expected_deployment(rollback), "Rollback Deployment" if rollback else "Candidate Deployment")
 
@@ -182,13 +197,44 @@ def reject_inline_values(value):
     if isinstance(value, dict):
         require(not ({"command", "args"} & set(value)), "Source command/args are not approved")
         if "env" in value:
-            require(isinstance(value["env"], list) and all(isinstance(entry, dict) and "value" not in entry for entry in value["env"]),
-                    "Source literal environment values are forbidden")
+            env = value["env"]
+            require(isinstance(env, list) and all(isinstance(entry, dict) and isinstance(entry.get("name"), str)
+                                                for entry in env), "Invalid source environment list")
+            names = [entry["name"] for entry in env]
+            require(len(names) == len(set(names)), "Duplicate source environment names")
+            require(not (set(names) & {entry["name"] for entry in CANDIDATE_ENV}),
+                    "UDS environment is restricted to reviewed candidate and rollback patches")
+            require(all("value" not in entry for entry in env), "Source literal environment values are forbidden")
         for child in value.values():
             reject_inline_values(child)
     elif isinstance(value, list):
         for child in value:
             reject_inline_values(child)
+
+
+def inspect_scoped_environment(doc, relative):
+    # Validate the entire source list before Kustomize can hide a duplicate or
+    # override. Only the exact reviewed entries are removed from this validation
+    # copy; every other source path retains the default-deny rules below.
+    reviewed = copy.deepcopy(doc)
+    if relative in {CANDIDATE_PATCH, ROLLBACK_IMAGE_PATCH}:
+        metadata = reviewed.get("metadata", {})
+        require(reviewed.get("apiVersion") == "apps/v1" and reviewed.get("kind") == "Deployment"
+                and metadata.get("name") == NAME and metadata.get("namespace", NS) == NS,
+                "Scoped environment patch must target the DEV Deployment")
+        containers = reviewed.get("spec", {}).get("template", {}).get("spec", {}).get("containers")
+        require(isinstance(containers, list) and len(containers) == 1 and isinstance(containers[0], dict)
+                and containers[0].get("name") == NAME, "Scoped environment patch must target one approved container")
+        container = containers[0]
+        if relative == CANDIDATE_PATCH:
+            expected = expected_candidate_spec()["template"]["spec"]["containers"][0]["env"]
+            exact(container.get("env"), expected, "Candidate source environment")
+            container["env"] = container["env"][:-len(CANDIDATE_ENV)]
+        else:
+            expected = [{"name": entry["name"], "$patch": "delete"} for entry in CANDIDATE_ENV]
+            exact(container.get("env"), expected, "Rollback source environment removals")
+            del container["env"]
+    reject_inline_values(reviewed)
 
 
 def inspect_sources(repo):
@@ -203,7 +249,7 @@ def inspect_sources(repo):
         doc = docs[0]
         require(doc.get("kind") in {"Kustomization", "Deployment", "Application", "AppProject"}, "Unexpected source resource kind")
         if doc.get("kind") != "Kustomization":
-            reject_inline_values(doc)
+            inspect_scoped_environment(doc, path.relative_to(repo).as_posix())
             continue
         require(set(doc) <= {"apiVersion", "kind", "resources", "namespace", "patches"}, "Unsafe Kustomization transformer or generator")
         require(doc.get("apiVersion") == "kustomize.config.k8s.io/v1beta1", "Unexpected Kustomization API")
@@ -251,7 +297,8 @@ def check(repo, live_snapshot=None):
     validate_deployment(rollback[0], rollback=True)
     comparable = copy.deepcopy(rollback[0]["spec"])
     comparable["template"]["spec"]["containers"][0].update(image=CANDIDATE, imagePullPolicy="IfNotPresent")
-    exact(comparable, dev[0]["spec"], "Candidate/rollback spec outside image and pull policy")
+    comparable["template"]["spec"]["containers"][0]["env"].extend(copy.deepcopy(CANDIDATE_ENV))
+    exact(comparable, dev[0]["spec"], "Candidate/rollback spec outside approved image, pull policy and UDS environment")
     revision = validate_controls(argo)
     result = {"status": "PASS", "static": "PASS", "yaml_files": count, "revision": revision,
               "live_comparison": "NOT_RUN", "actual_argo_apply": "UNVERIFIED", "sync_authorized": False,
