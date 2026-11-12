@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: default
+  namespace: argocd
+  labels:
+    datacenter.gcp/bootstrap: gke-03b
+spec:
+  description: Reserved deny-all default; no repository or destination approved.
+  sourceRepos: []
+  destinations: []
+  sourceNamespaces: []
+  clusterResourceWhitelist: []
+  namespaceResourceBlacklist:
+  - group: '*'
+    kind: '*'
+  orphanedResources:
+    warn: true

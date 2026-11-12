@@ -1,0 +1,46 @@
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: gke-airflow-api-health
+  namespace: datacenter-airflow
+  labels:
+    datacenter.gcp/owner: gke03a-common
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8080
+        requestPath: /api/v2/monitor/health
+  targetRef:
+    group: ''
+    kind: Service
+    name: gke-airflow-api
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: datacenter-api-health
+  namespace: datacenter-app-dev
+  labels:
+    datacenter.gcp/owner: gke03a-common
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8000
+        requestPath: /health
+  targetRef:
+    group: ''
+    kind: Service
+    name: datacenter-api

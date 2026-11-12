@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - objects/00-namespace-datacenter-observability.yaml
+  - objects/01-storageclass-gke-common-retain-balanced.yaml
+  - objects/02-networkpolicy-gke03c-default-deny.yaml
+  - objects/03-networkpolicy-gke03c-dns-egress.yaml
+  - objects/04-networkpolicy-grafana-metrics-from-prometheus.yaml
+  - objects/05-networkpolicy-grafana-to-prometheus.yaml
+  - objects/06-networkpolicy-prometheus-from-grafana.yaml
+  - objects/07-networkpolicy-prometheus-to-grafana-metrics.yaml
+  - objects/08-serviceaccount-gke-grafana.yaml
+  - objects/09-serviceaccount-gke-prometheus.yaml
+  - objects/10-configmap-gke-grafana.yaml
+  - objects/11-configmap-gke-grafana-bootstrap-dashboard.yaml
+  - objects/12-configmap-gke-prometheus-server.yaml
+  - objects/13-persistentvolumeclaim-gke-grafana-new-empty.yaml
+  - objects/14-persistentvolumeclaim-gke-prometheus-new-empty.yaml
+  - objects/15-service-gke-grafana.yaml
+  - objects/16-service-gke-prometheus-server.yaml
+  - objects/17-deployment-gke-grafana.yaml
+  - objects/18-deployment-gke-prometheus-server.yaml

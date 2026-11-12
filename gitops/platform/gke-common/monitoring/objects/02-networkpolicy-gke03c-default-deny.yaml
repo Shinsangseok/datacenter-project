@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    datacenter.gcp/owner: gke03c-monitoring
+  name: gke03c-default-deny
+  namespace: datacenter-observability
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

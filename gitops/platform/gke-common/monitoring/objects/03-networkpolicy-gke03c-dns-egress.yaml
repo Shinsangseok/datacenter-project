@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    datacenter.gcp/owner: gke03c-monitoring
+  name: gke03c-dns-egress
+  namespace: datacenter-observability
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: node-local-dns
+  podSelector:
+    matchExpressions:
+    - key: datacenter.gcp/component
+      operator: In
+      values:
+      - prometheus
+      - grafana
+  policyTypes:
+  - Egress

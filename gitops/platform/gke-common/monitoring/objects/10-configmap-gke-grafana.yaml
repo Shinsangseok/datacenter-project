@@ -1,0 +1,71 @@
+apiVersion: v1
+data:
+  dashboardproviders.yaml: "apiVersion: 1\nproviders:\n- allowUiUpdates: false\n \
+    \ disableDeletion: true\n  folder: GKE Bootstrap\n  folderUid: gke-bootstrap\n\
+    \  name: gke03c-bootstrap\n  options:\n    path: /var/lib/grafana/dashboards/default\n\
+    \  orgId: 1\n  type: file\n  updateIntervalSeconds: 60\n"
+  datasources.yaml: "apiVersion: 1\ndatasources:\n- access: proxy\n  editable: false\n\
+    \  isDefault: true\n  name: GKE-new-Prometheus\n  type: prometheus\n  uid: gke-new-prometheus\n\
+    \  url: http://gke-prometheus-server.datacenter-observability.svc.cluster.local:9090\n"
+  grafana.ini: '[analytics]
+
+    check_for_plugin_updates = false
+
+    check_for_updates = false
+
+    reporting_enabled = false
+
+    [auth.anonymous]
+
+    enabled = false
+
+    [log]
+
+    mode = console
+
+    [metrics]
+
+    enabled = true
+
+    [paths]
+
+    data = /var/lib/grafana/
+
+    logs = /var/log/grafana
+
+    plugins = /var/lib/grafana/plugins
+
+    provisioning = /etc/grafana/provisioning
+
+    [plugins]
+
+    preinstall_auto_update = false
+
+    [security]
+
+    disable_gravatar = true
+
+    [server]
+
+    domain = ''''
+
+    root_url = http://localhost:3000
+
+    [unified_storage]
+
+    index_path = /var/lib/grafana-search/bleve
+
+    [users]
+
+    allow_sign_up = false
+
+    '
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: gke-grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 13.3.1
+    helm.sh/chart: grafana-14.4.1
+  name: gke-grafana
+  namespace: datacenter-observability

@@ -1,0 +1,432 @@
+{
+  "format": "GKE06-selected-source-map-v1",
+  "baseline_main": "2801343e67452e5d5170e341cc77e7717908ec4f",
+  "scope": "Selected final public manifests and sanitized Dashboard definition; not report/log/private credential copies.",
+  "files": [
+    {
+      "target": "gitops/overlays/gcp/dev/deployment-contract.patch.yaml",
+      "target_sha256": "83ba786ca7ddfcbab779dbf9e0217fb889e8c7be201a8deadc5e9e43ca672abe",
+      "source_package": "gke-02a-manifest-20261110T011225+0900",
+      "source_path": "source/gitops/overlays/gcp/dev/deployment-contract.patch.yaml",
+      "source_sha256": "83ba786ca7ddfcbab779dbf9e0217fb889e8c7be201a8deadc5e9e43ca672abe",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/overlays/gcp/dev/kustomization.yaml",
+      "target_sha256": "6ec6bf63d359be8108d42d46b903bcc836f85a3f3ecc6b5d84bb0128249a28c0",
+      "source_package": "gke-02a-manifest-20261110T011225+0900",
+      "source_path": "source/gitops/overlays/gcp/dev/kustomization.yaml",
+      "source_sha256": "6ec6bf63d359be8108d42d46b903bcc836f85a3f3ecc6b5d84bb0128249a28c0",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/overlays/gcp/dev/README.txt",
+      "target_sha256": "b664540001f9fea36268d8c60d7ec81c3d234cd9b4dde54c6bfd2293a28a9a2d",
+      "source_package": "gke-02a-manifest-20261110T011225+0900",
+      "source_path": "source/gitops/overlays/gcp/dev/README.txt",
+      "source_sha256": "b664540001f9fea36268d8c60d7ec81c3d234cd9b4dde54c6bfd2293a28a9a2d",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/bootstrap/namespaces.yaml",
+      "target_sha256": "61fdd7f8f61f55a3ebb2e9e82f6a96990bbe9d35a05eb0ca569b5d21ff106100",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/bootstrap/namespaces.yaml",
+      "source_sha256": "a3090a57aeb96cab70d205b09f95ed4bc66d109847c7d928260fbb2c0e993610",
+      "operation": "selected_unchanged_yaml_documents"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/bootstrap/service-accounts.yaml",
+      "target_sha256": "44cbedc3a9390946a7bf4fbf3fbe4c73f45e465dec0deaeac5ac915b6e6c8d99",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/bootstrap/service-accounts.yaml",
+      "source_sha256": "2cb2d5ef92c3a29fd4f2614a976995199bbb1452084db183ad9b149ce99c541b",
+      "operation": "selected_unchanged_yaml_documents"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/bootstrap/namespace-rbac.yaml",
+      "target_sha256": "17c386d2208a19306779c73956f63783a157622c2ff394c49414be5e1870a94a",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/bootstrap/namespace-rbac.yaml",
+      "source_sha256": "181ad2a82264e3fef4f85a3dcee1be1dc7331c9a314c2488fc3e2af75819cf17",
+      "operation": "selected_unchanged_yaml_documents"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/bootstrap/network-policies.yaml",
+      "target_sha256": "0e015e751e574121ff62b5ffdbed59e0b1320799ee01f9d477e0adc0c15a93b2",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/bootstrap/network-policies.yaml",
+      "source_sha256": "c2463d1cddeead560a3b5ea0a7cdf1fbcc67ff0249866e8e47f427b940f78724",
+      "operation": "selected_unchanged_yaml_documents"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/bootstrap/kustomization.yaml",
+      "target_sha256": "b16327781c3d9596731662833ab91d9c03267f3a03018e64672ae6cab47a14ef",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/bootstrap/kustomization.yaml",
+      "source_sha256": "f210ea854fef05255f25c1f5b3287c7cc7534654f8b4631ed90a11d5d0aaf25a",
+      "operation": "kustomization_path_relocation_or_selected_resource_list"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/kustomization.yaml",
+      "target_sha256": "6958de88272c2a86db7614fb2e075435401a1f8675658d29967197862c4dce48",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/kustomization.yaml",
+      "source_sha256": "faaa3d28d49bcefcd57a11d9954d290ac01f569f6e2ef858c8e09fa9cd4b7b4b",
+      "operation": "kustomization_path_relocation_or_selected_resource_list"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/airflow-migration-held/kustomization.yaml",
+      "target_sha256": "997acec1e9903c2f91411996acb7ce8048d7eb681290808c7974a7b656fc62a6",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/profiles/airflow-migration-held/kustomization.yaml",
+      "source_sha256": "997acec1e9903c2f91411996acb7ce8048d7eb681290808c7974a7b656fc62a6",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/airflow-migration-held/pvcs.yaml",
+      "target_sha256": "88a382ab0b97533c68ceb36f99b18de53d991d07c3308c4c916af2d3a57e737a",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/profiles/airflow-migration-held/pvcs.yaml",
+      "source_sha256": "88a382ab0b97533c68ceb36f99b18de53d991d07c3308c4c916af2d3a57e737a",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/airflow-migration-held/resources.yaml",
+      "target_sha256": "8574896ece2a82cffd7bcd367c918075b1e8df046ad07fb59e6e4c585184c18c",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/profiles/airflow-migration-held/resources.yaml",
+      "source_sha256": "8574896ece2a82cffd7bcd367c918075b1e8df046ad07fb59e6e4c585184c18c",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/dev-service-held/service.yaml",
+      "target_sha256": "9a1ca08728d495740cc3318de4f07408c2fd1f5b1ca163312afd08e5779a5ec7",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/proposals/dev-service-held/service.yaml",
+      "source_sha256": "9a1ca08728d495740cc3318de4f07408c2fd1f5b1ca163312afd08e5779a5ec7",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/dev-service-held/kustomization.yaml",
+      "target_sha256": "d8a339d257287e160a4f1a337fd80e09a78fc3614693004d1780545ddeb78e85",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/proposals/dev-service-held/kustomization.yaml",
+      "source_sha256": "d8a339d257287e160a4f1a337fd80e09a78fc3614693004d1780545ddeb78e85",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/gateway-held/resources.yaml",
+      "target_sha256": "728b8752ec60c115b72564149e2ffdff3dad21697839cd4fe75ab0c303c1871a",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/proposals/gateway-held/resources.yaml",
+      "source_sha256": "f46a0daa3282d4974b6a11f8bce6f54390d594ef542ac6f653f6e03b022dc821",
+      "operation": "selected_unchanged_yaml_documents"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/gateway-held/network.yaml",
+      "target_sha256": "b5251f6ef4244f6e7773e4e51fb81ad156b1fd454ebe9a9afd144465e7e28632",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/proposals/gateway-held/network.yaml",
+      "source_sha256": "95f638e5d360f1988b5a4b797c053c018c5e5a9b01cfa5b58d5db1a44d0f6226",
+      "operation": "selected_unchanged_yaml_documents"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/gateway-held/health-check-policies.yaml",
+      "target_sha256": "141b9b5de6bde86abbaa7366263838d3236532915fbc0d754772a7940c13c061",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/proposals/gateway-held/health-check-policies.yaml",
+      "source_sha256": "029c960c0c474da1c2fad2da07ab141f2dcdc83eb84c0000396bf931467acb58",
+      "operation": "selected_unchanged_yaml_documents"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/gateway-held/kustomization.yaml",
+      "target_sha256": "37eaaafe156c0e60c546208378acb743a815fdabaab3228bae2f2104b1e1e9e9",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/platform/gke-common/proposals/gateway-held/kustomization.yaml",
+      "source_sha256": "37eaaafe156c0e60c546208378acb743a815fdabaab3228bae2f2104b1e1e9e9",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/README.md",
+      "target_sha256": "30c047728bf9a5aa7de5085514086a146642bb8d27bd78bea25817c4ac9ad15e",
+      "source_package": null,
+      "source_path": null,
+      "source_sha256": null,
+      "operation": "new_document"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/dev-platform-prep/hardening-and-hold.patch.yaml",
+      "target_sha256": "fd31d6a0f799f690e5c8342b0b23b486aaa1f250efdc2ad8c4e5d33c2faa2a32",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/overlays/gcp/dev-platform-prep/hardening-and-hold.patch.yaml",
+      "source_sha256": "fd31d6a0f799f690e5c8342b0b23b486aaa1f250efdc2ad8c4e5d33c2faa2a32",
+      "operation": "byte_identical_copy"
+    },
+    {
+      "target": "gitops/platform/gke-common/planned/dev-platform-prep/kustomization.yaml",
+      "target_sha256": "88471a60a1fd5f96907703ddd0b9bcfbf48223a42107b4190a121f1714173807",
+      "source_package": "gke-03a-common-services-20261111T143740+0900",
+      "source_path": "source/gitops/overlays/gcp/dev-platform-prep/kustomization.yaml",
+      "source_sha256": "64929a542aad581c0c6356a870c27ed411041f95f08eb701fdbb241aaae4a4a7",
+      "operation": "kustomization_path_relocation_or_selected_resource_list"
+    },
+    {
+      "target": "docs/gcp/dev-and-planned-services.md",
+      "target_sha256": "148791eb0b6831722c8bf3c859a4d76efe67d1bdb89b3d13986df2545e848587",
+      "source_package": null,
+      "source_path": null,
+      "source_sha256": null,
+      "operation": "new_document"
+    },
+    {
+      "target": "gitops/argocd/gcp/namespace.yaml",
+      "target_sha256": "319b1c61a73f2c446ca2f368daee8c5a868a7c92d1551284c9e5528b74155d73",
+      "source_package": "gke-03b-argo-bootstrap-20261111T161819+0900",
+      "source_path": "source/argocd-bootstrap/namespace.yaml",
+      "source_sha256": "319b1c61a73f2c446ca2f368daee8c5a868a7c92d1551284c9e5528b74155d73",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/argocd/gcp/crds/crds.yaml",
+      "target_sha256": "1c9d33ce2393268942b40c1d9061b37d0381af0f66e4648c8f8d5ac774d04b23",
+      "source_package": "gke-03b-argo-bootstrap-20261111T161819+0900",
+      "source_path": "approval/crds.yaml",
+      "source_sha256": "1c9d33ce2393268942b40c1d9061b37d0381af0f66e4648c8f8d5ac774d04b23",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/argocd/gcp/reserved-default-project.yaml",
+      "target_sha256": "7cd86286b9c65443e74d36d0eb6146351958e176f946a56b97a6108ab1576339",
+      "source_package": "gke-03b-argo-bootstrap-20261111T161819+0900",
+      "source_path": "source/argocd-bootstrap/reserved-default-project.yaml",
+      "source_sha256": "7cd86286b9c65443e74d36d0eb6146351958e176f946a56b97a6108ab1576339",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/argocd/gcp/runtime/core.yaml",
+      "target_sha256": "733936953d565cd54acc16b47918eef433a831f219f4d4fdd73f8f55cd882af1",
+      "source_package": "gke-03b-argo-bootstrap-20261111T161819+0900",
+      "source_path": "approval/runtime-core.yaml",
+      "source_sha256": "733936953d565cd54acc16b47918eef433a831f219f4d4fdd73f8f55cd882af1",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/argocd/gcp/runtime/network-policies.yaml",
+      "target_sha256": "86827726ffdd4ddc43b80382e2d15c1e90cda106606f9625d5d1c6785aa26203",
+      "source_package": "gke-03b-argo-bootstrap-20261111T161819+0900",
+      "source_path": "approval/network-policies.yaml",
+      "source_sha256": "1d94cdf9c42df09c609d3552b24c56d9636814190804696313a0442fbb3150a1",
+      "operation": "EXACT_FINAL_DNS_PEER_DELTA_ONLY"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/00-namespace-datacenter-observability.yaml",
+      "target_sha256": "5bea26f311ab88d0ea0a59061b45b2cd0f70971af14bfc64d829eb50c7ada8e7",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/00-namespace-datacenter-observability.yaml",
+      "source_sha256": "5bea26f311ab88d0ea0a59061b45b2cd0f70971af14bfc64d829eb50c7ada8e7",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/01-storageclass-gke-common-retain-balanced.yaml",
+      "target_sha256": "66d61bfd371343bee9bc73f9fdbef2a410d3ff08ecd0561b46f130d769797227",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/01-storageclass-gke-common-retain-balanced.yaml",
+      "source_sha256": "66d61bfd371343bee9bc73f9fdbef2a410d3ff08ecd0561b46f130d769797227",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/02-networkpolicy-gke03c-default-deny.yaml",
+      "target_sha256": "e9d85d208364f5c838ce019b7438c8e4edeeddfc9db404efa6dc520c65b2f226",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/02-networkpolicy-gke03c-default-deny.yaml",
+      "source_sha256": "e9d85d208364f5c838ce019b7438c8e4edeeddfc9db404efa6dc520c65b2f226",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/03-networkpolicy-gke03c-dns-egress.yaml",
+      "target_sha256": "907ee85f4536302968efb6ccbb1d86c3646a3b54749695067c17cde0e3eb9ecf",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/03-networkpolicy-gke03c-dns-egress.yaml",
+      "source_sha256": "907ee85f4536302968efb6ccbb1d86c3646a3b54749695067c17cde0e3eb9ecf",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/04-networkpolicy-grafana-metrics-from-prometheus.yaml",
+      "target_sha256": "9a886f774e04df8799e99a456a358339aed82b4500118606d93e3e8f996468a6",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/04-networkpolicy-grafana-metrics-from-prometheus.yaml",
+      "source_sha256": "9a886f774e04df8799e99a456a358339aed82b4500118606d93e3e8f996468a6",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/05-networkpolicy-grafana-to-prometheus.yaml",
+      "target_sha256": "9bb26fe98f641612ae690312e1ee664f18914a949f15d7cc31330034b3e28055",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/05-networkpolicy-grafana-to-prometheus.yaml",
+      "source_sha256": "9bb26fe98f641612ae690312e1ee664f18914a949f15d7cc31330034b3e28055",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/06-networkpolicy-prometheus-from-grafana.yaml",
+      "target_sha256": "71a4f88daf0ddccbb83601582160fb268b5e50808a8b7937bfb7dcedaea4e3d4",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/06-networkpolicy-prometheus-from-grafana.yaml",
+      "source_sha256": "71a4f88daf0ddccbb83601582160fb268b5e50808a8b7937bfb7dcedaea4e3d4",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/07-networkpolicy-prometheus-to-grafana-metrics.yaml",
+      "target_sha256": "8ae484cb8adb57b3b9b5838ec32bcfb8a4491b5c9b1dce44353439af59056266",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/07-networkpolicy-prometheus-to-grafana-metrics.yaml",
+      "source_sha256": "8ae484cb8adb57b3b9b5838ec32bcfb8a4491b5c9b1dce44353439af59056266",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/08-serviceaccount-gke-grafana.yaml",
+      "target_sha256": "fdf9223a057628a1847ff1f2723389e734e3a12a08001fb3dfc996d7c2afc3c6",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/08-serviceaccount-gke-grafana.yaml",
+      "source_sha256": "fdf9223a057628a1847ff1f2723389e734e3a12a08001fb3dfc996d7c2afc3c6",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/09-serviceaccount-gke-prometheus.yaml",
+      "target_sha256": "ca7c37010619fac15d5ff582acbd33f6a4c7e581d0842b289cd38a84790059d5",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/09-serviceaccount-gke-prometheus.yaml",
+      "source_sha256": "ca7c37010619fac15d5ff582acbd33f6a4c7e581d0842b289cd38a84790059d5",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/10-configmap-gke-grafana.yaml",
+      "target_sha256": "77d36e7679124fef5b584050019635830a08c31b9042dca3ea18286a445c0ccb",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/10-configmap-gke-grafana.yaml",
+      "source_sha256": "77d36e7679124fef5b584050019635830a08c31b9042dca3ea18286a445c0ccb",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/11-configmap-gke-grafana-bootstrap-dashboard.yaml",
+      "target_sha256": "309b430aec484211f8b2f7356ecdcfcb4dde825702037717ce8090c59c723f1e",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/11-configmap-gke-grafana-bootstrap-dashboard.yaml",
+      "source_sha256": "309b430aec484211f8b2f7356ecdcfcb4dde825702037717ce8090c59c723f1e",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/12-configmap-gke-prometheus-server.yaml",
+      "target_sha256": "39537344b6b7c91e268803a74212c275877a0233a00d50e2ce6b6af46971b03c",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/12-configmap-gke-prometheus-server.yaml",
+      "source_sha256": "39537344b6b7c91e268803a74212c275877a0233a00d50e2ce6b6af46971b03c",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/13-persistentvolumeclaim-gke-grafana-new-empty.yaml",
+      "target_sha256": "60295f4c19982122431d88c4c032a82e6d00e41e1a32167f2b0b231e3b1abe48",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/13-persistentvolumeclaim-gke-grafana-new-empty.yaml",
+      "source_sha256": "60295f4c19982122431d88c4c032a82e6d00e41e1a32167f2b0b231e3b1abe48",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/14-persistentvolumeclaim-gke-prometheus-new-empty.yaml",
+      "target_sha256": "4591ed27c89972fa785ed1176f2555ad720be9d6674a522b0e2060a14b42d981",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/14-persistentvolumeclaim-gke-prometheus-new-empty.yaml",
+      "source_sha256": "4591ed27c89972fa785ed1176f2555ad720be9d6674a522b0e2060a14b42d981",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/15-service-gke-grafana.yaml",
+      "target_sha256": "f2087fbe5afa2037221ba71214a119d053f636051a33bc09570315f39d21933e",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/15-service-gke-grafana.yaml",
+      "source_sha256": "f2087fbe5afa2037221ba71214a119d053f636051a33bc09570315f39d21933e",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/16-service-gke-prometheus-server.yaml",
+      "target_sha256": "8c29de2fcca9564c0bc8c1602381eedbc2fd10808fdb9743467988373b52b14a",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/16-service-gke-prometheus-server.yaml",
+      "source_sha256": "8c29de2fcca9564c0bc8c1602381eedbc2fd10808fdb9743467988373b52b14a",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/17-deployment-gke-grafana.yaml",
+      "target_sha256": "3ac6c875395da01d359d39d8a3687b19b348c4d8bfc9a3b2dc1f3709e7b7f57d",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/17-deployment-gke-grafana.yaml",
+      "source_sha256": "3ac6c875395da01d359d39d8a3687b19b348c4d8bfc9a3b2dc1f3709e7b7f57d",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/objects/18-deployment-gke-prometheus-server.yaml",
+      "target_sha256": "19f7799fee6d758909fd80aab868fb8f7645d621f4ba918582f58ce0fa7c3755",
+      "source_package": "gke-03c-monitoring-20261111T195832+0900",
+      "source_path": "approval/objects/18-deployment-gke-prometheus-server.yaml",
+      "source_sha256": "19f7799fee6d758909fd80aab868fb8f7645d621f4ba918582f58ce0fa7c3755",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/dashboards/adtgr97.api.json",
+      "target_sha256": "408beb5ce3e225aab0477985d236f1cd8e21d06397455dd1221b0c04b0de75e3",
+      "source_package": "gke-03c1-monitoring-config-20261112T100956+0900",
+      "source_path": "candidates/aws-current-adtgr97-served-v2/candidate.json",
+      "source_sha256": "408beb5ce3e225aab0477985d236f1cd8e21d06397455dd1221b0c04b0de75e3",
+      "operation": "BYTE_IDENTICAL"
+    },
+    {
+      "target": "docs/gcp/monitoring.md",
+      "target_sha256": "151d0b13cfc8e6900b386474a75b59065031895437fb8ea7f84d6b0a4ecf1600",
+      "source_package": "MULTIPLE_VERIFIED_HANDOFFS_OR_GENERATED_KUSTOMIZATION",
+      "source_path": null,
+      "source_sha256": null,
+      "operation": "NEW_DOCUMENT_OR_SUMMARY_NO_OPERATIONAL_SPEC_CHANGE"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/dashboards/README.md",
+      "target_sha256": "3e79431658800c387ee7d937481ef42c018f9cbb482185cfa73b55343081552a",
+      "source_package": "MULTIPLE_VERIFIED_HANDOFFS_OR_GENERATED_KUSTOMIZATION",
+      "source_path": null,
+      "source_sha256": null,
+      "operation": "NEW_DOCUMENT_OR_SUMMARY_NO_OPERATIONAL_SPEC_CHANGE"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/kustomization.yaml",
+      "target_sha256": "0411743e9ba0962f8490ef27c0a80f637a503a8ea53c8976dd017cb6b0fdae70",
+      "source_package": "MULTIPLE_VERIFIED_HANDOFFS_OR_GENERATED_KUSTOMIZATION",
+      "source_path": null,
+      "source_sha256": null,
+      "operation": "NEW_DOCUMENT_OR_SUMMARY_NO_OPERATIONAL_SPEC_CHANGE"
+    },
+    {
+      "target": "gitops/platform/gke-common/monitoring/provenance/verified-state.json",
+      "target_sha256": "f82fab1ee68ab691259dd5fe2eb8e730c5fdf03bf4c6624505ce03974560cccc",
+      "source_package": "MULTIPLE_VERIFIED_HANDOFFS_OR_GENERATED_KUSTOMIZATION",
+      "source_path": null,
+      "source_sha256": null,
+      "operation": "NEW_DOCUMENT_OR_SUMMARY_NO_OPERATIONAL_SPEC_CHANGE"
+    }
+  ],
+  "actual_vs_planned": "Argo35 and monitoring19 mirror previously approved public installation definitions; DEV/planned are held drafts, not newly deployed.",
+  "DNS_change": "Only final approved NodeLocal DNS AND-peer addition from03B final DNS fix; no policy widening beyond that approved spec.",
+  "Secret_objects_copied": 0,
+  "private_credential_files_copied": 0,
+  "all_Source_references": "Packet basename + relative path + SHA; full evidence packages remain outside Git.",
+  "schema_and_policy_subsets": "scripts/gcp/schemas/manifest.json pins selected public schema closure and reviewed source/security contracts.",
+  "Argo_upstream_license": {
+    "url": "https://github.com/argoproj/argo-cd/blob/v3.6.1/LICENSE",
+    "target": "gitops/argocd/gcp/crds/LICENSE",
+    "sha256": "c996fc213c94f4a4a838407d355b081226caa7b103a4f239bb87fb8f1d8e3a60"
+  },
+  "remaining_gates": [
+    "DEV data restore HOLD",
+    "AWS workload metrics and TSDB history not migrated",
+    "No Application/Sync or deployment approval",
+    "External Secret/ConfigMap runtime provisioning and admission checks remain separate"
+  ]
+}

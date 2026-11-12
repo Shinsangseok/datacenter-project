@@ -1,0 +1,277 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gke-airflow-scheduler
+  labels:
+    datacenter.gcp/owner: gke03a-common
+  namespace: datacenter-airflow
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      datacenter.gcp/component: airflow-scheduler
+  template:
+    metadata:
+      labels:
+        datacenter.gcp/component: airflow-scheduler
+    spec:
+      serviceAccountName: gke-airflow-scheduler
+      automountServiceAccountToken: false
+      nodeSelector:
+        cloud.google.com/gke-nodepool: shared-pool
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 50000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: scheduler
+        image: apache/airflow@sha256:bef4d135ec7b64658cf64089973edd62cab8fd72203f280c7e0952213c17d912
+        args:
+        - scheduler
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 750m
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-database
+              key: sql-alchemy-conn
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-crypto
+              key: fernet-key
+        - name: AIRFLOW__API_AUTH__JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-crypto
+              key: jwt-secret
+        - name: AIRFLOW__CORE__LOAD_EXAMPLES
+          value: 'false'
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: LocalExecutor
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+          readOnly: true
+        - name: logs
+          mountPath: /opt/airflow/logs
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: gke-airflow-dags-restored
+      - name: logs
+        persistentVolumeClaim:
+          claimName: gke-airflow-logs-restored
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gke-airflow-api
+  labels:
+    datacenter.gcp/owner: gke03a-common
+  namespace: datacenter-airflow
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      datacenter.gcp/component: airflow-api
+  template:
+    metadata:
+      labels:
+        datacenter.gcp/component: airflow-api
+    spec:
+      serviceAccountName: gke-airflow-api
+      automountServiceAccountToken: false
+      nodeSelector:
+        cloud.google.com/gke-nodepool: shared-pool
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 50000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: api
+        image: apache/airflow@sha256:bef4d135ec7b64658cf64089973edd62cab8fd72203f280c7e0952213c17d912
+        args:
+        - api-server
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 750m
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-database
+              key: sql-alchemy-conn
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-crypto
+              key: fernet-key
+        - name: AIRFLOW__API_AUTH__JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-crypto
+              key: jwt-secret
+        - name: AIRFLOW__CORE__LOAD_EXAMPLES
+          value: 'false'
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: LocalExecutor
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+          readOnly: true
+        - name: logs
+          mountPath: /opt/airflow/logs
+        - name: tmp
+          mountPath: /tmp
+        ports:
+        - name: http
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /api/v2/monitor/health
+            port: http
+          initialDelaySeconds: 20
+          periodSeconds: 10
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: gke-airflow-dags-restored
+      - name: logs
+        persistentVolumeClaim:
+          claimName: gke-airflow-logs-restored
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gke-airflow-dag-processor
+  labels:
+    datacenter.gcp/owner: gke03a-common
+  namespace: datacenter-airflow
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      datacenter.gcp/component: airflow-dag-processor
+  template:
+    metadata:
+      labels:
+        datacenter.gcp/component: airflow-dag-processor
+    spec:
+      serviceAccountName: gke-airflow-dag-processor
+      automountServiceAccountToken: false
+      nodeSelector:
+        cloud.google.com/gke-nodepool: shared-pool
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 50000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: dag-processor
+        image: apache/airflow@sha256:bef4d135ec7b64658cf64089973edd62cab8fd72203f280c7e0952213c17d912
+        args:
+        - dag-processor
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 750m
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-database
+              key: sql-alchemy-conn
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-crypto
+              key: fernet-key
+        - name: AIRFLOW__API_AUTH__JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gke-airflow-crypto
+              key: jwt-secret
+        - name: AIRFLOW__CORE__LOAD_EXAMPLES
+          value: 'false'
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: LocalExecutor
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+          readOnly: true
+        - name: logs
+          mountPath: /opt/airflow/logs
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: gke-airflow-dags-restored
+      - name: logs
+        persistentVolumeClaim:
+          claimName: gke-airflow-logs-restored
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gke-airflow-api
+  labels:
+    datacenter.gcp/owner: gke03a-common
+  namespace: datacenter-airflow
+spec:
+  type: ClusterIP
+  selector:
+    datacenter.gcp/component: airflow-api
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http

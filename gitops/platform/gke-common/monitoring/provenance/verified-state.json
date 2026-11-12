@@ -1,0 +1,134 @@
+{
+  "record_type": "HISTORICAL_VERIFIED_STATE_NOT_A_NEW_LIVE_OBSERVATION",
+  "as_of": "2026-11-12",
+  "build_root": "gitops/platform/gke-common/monitoring",
+  "source_render_sha256": "c22af364518b275085626215222f5c879dfd9ff0f3e5a97934ffac09d4a7e838",
+  "approved_Kubernetes_public_object_count": 19,
+  "external_Secret_count": 1,
+  "actual_direct_object_count": 20,
+  "bootstrap": {
+    "Prometheus": "3.16.0",
+    "Grafana": "13.3.1",
+    "static_scrape_targets": 2,
+    "Ready_Pods": 2,
+    "Retain_PVs_PD_count": 2,
+    "PVC_capacity_Gi": {
+      "Prometheus": 20,
+      "Grafana": 10
+    },
+    "NetworkPolicies": 6,
+    "Secret_values_in_source": false,
+    "GMP_changes": 0,
+    "API_RBAC_objects_created": 0,
+    "dashboard_UID": "gke-bootstrap-self-metrics",
+    "panels": 4,
+    "management": "ConfigMap file provisioning"
+  },
+  "AWS_dashboard": {
+    "actual_source": "Approved current AWS Grafana Org1 native V2 GET export; not merely a Git snapshot.",
+    "source_uid": "adtgr97",
+    "source_scope": "Current Org1 complete/stable dashboard index1 and General/root folder index0; other organizations UNVERIFIED.",
+    "final_API_candidate_sha256": "408beb5ce3e225aab0477985d236f1cd8e21d06397455dd1221b0c04b0de75e3",
+    "Git_definition": "dashboards/adtgr97.api.json",
+    "Kubernetes_manifest": false,
+    "included_in_build_or_file_provisioning": false,
+    "actual_Grafana_create_only_writes": 1,
+    "actual_new_Kubernetes_resources_for_dashboard_import": 0,
+    "datasource_uid": "gke-new-prometheus",
+    "only_source_spec_change": "6 datasource.name refs prometheus -> gke-new-prometheus",
+    "panels": 6,
+    "PromQL_preserved": 6,
+    "API_saved_definition_validation": "PASS",
+    "user_visual_validation": "PASS_USER_CONFIRMED_DIRECT_WINDOWS_OBSERVATION",
+    "No_data_panels": 6,
+    "metrics_collection": "INCOMPLETE_PENDING_WORKLOAD_MIGRATION",
+    "alerts_contacts_or_new_scrape_targets_added": 0
+  },
+  "session_state": {
+    "old_automated_session_logout": "UNVERIFIED_UNCHANGED",
+    "new_manual_browser_logout": "USER_CONFIRMED_PASS",
+    "old_automated_render_attempts": "INCOMPLETE_EVIDENCE_PRESERVED_NOT_RELABELLED_PASS",
+    "final_local_port13000_LISTEN": 0,
+    "closure_basis": "FINAL_TUNNEL_CLOSURE; earlier intermediate listener1 superseded."
+  },
+  "retained_gates": [
+    "AWS TSDB/WAL history and Grafana SQLite/key/DEK/plugin-file backup/restore not completed.",
+    "Six application panels need FastAPI/data/model/scrape migration; No data is an expected empty state, not populated metric correctness.",
+    "Full Kubernetes/node/exporter monitoring remains a separate infrastructure migration.",
+    "DEV data restore GKE_02F_RESTORE_GATE_HOLD remains separate.",
+    "No claim of complete AWS EC2/RDS/Dify/MLflow/Airflow migration, load/HA/DR validation or AWS shutdown readiness."
+  ],
+  "manifest_vs_validator_changes": {
+    "approved_manifest_changed_during_execution": false,
+    "public_19_objects_byte_identical": true,
+    "local_validation_only_corrections": [
+      "Decimal/binary SI resource parsing, including32M.",
+      "Only exact empty Prom storage mount subPath omission accepted as API serialization.",
+      "Service80 forwards to Pod3000.",
+      "Classic-converted dashboard response accepted only with identical UID/panels/queries/datasource refs."
+    ],
+    "legacy_absolute_path_or_private_credential_execution_helpers_copied_to_Git": false
+  },
+  "source_evidence": [
+    {
+      "package": "gke-03c-monitoring-20261111T195832+0900",
+      "path": "approval/EXECUTION_LOCK.json",
+      "sha256": "72bffb90d3ed622baef649e63d3c7b71da2e08e3c699af7b2f0021c80758bbd0"
+    },
+    {
+      "package": "gke-03c-monitoring-20261111T195832+0900",
+      "path": "validation/MONITORING_PREPARED_FINAL.yaml",
+      "sha256": "c22af364518b275085626215222f5c879dfd9ff0f3e5a97934ffac09d4a7e838"
+    },
+    {
+      "package": "gke-03c-monitoring-execution-20261112T094100+0900",
+      "path": "evidence/LIVE_MONITORING_VERIFICATION.json",
+      "sha256": "4bb86dfaf5b371b24482c777e0e78153e6006182cd0c48830f80d0375764ae08"
+    },
+    {
+      "package": "gke-03c-monitoring-execution-20261112T094100+0900",
+      "path": "evidence/LOCALHOST_FUNCTIONAL_VERIFICATION.json",
+      "sha256": "134a3af8724f73d3dc232a0f08ac1edbd8727f0b78ce24589435525d7fdd7e42"
+    },
+    {
+      "package": "gke-03c-monitoring-execution-20261112T094100+0900",
+      "path": "evidence/RESOURCE_QUANTITY_CORRECTION_VALIDATION.json",
+      "sha256": "2a7145f15da548d12213ae2df6c871a67e2e476811734a68ff7b84496dee83b5"
+    },
+    {
+      "package": "gke-03c-monitoring-execution-20261112T094100+0900",
+      "path": "evidence/GMP_POST_SNAPSHOT_LOCAL_COMPARISON.json",
+      "sha256": "a253b28496b19edeaea7174a755ac038c2f7012516e872f7bfac5e6b8539928f"
+    },
+    {
+      "package": "gke-03c1-monitoring-config-20261112T100956+0900",
+      "path": "evidence/research/ACTUAL_AWS_FINAL_API_CANDIDATE_VALIDATION.json",
+      "sha256": "22c9e1fcee19e48c6878ab986865adf44d3509e2e1bb2eb24da5fd3787eb08b5"
+    },
+    {
+      "package": "gke-03c2-dashboard-import-20261112T122548+0900",
+      "path": "evidence/FINAL_GRAFANA_GET_VERIFICATION.json",
+      "sha256": "0ad1ebfec0d0d42bf38bb378da78fc61df20c98f63760661e230fe27cf9eab13"
+    },
+    {
+      "package": "gke-03c2-render-confirmed-20261112T153222+0900",
+      "path": "FINAL_STATE.json",
+      "sha256": "1e3e28b4c27088de6ab30973bb6e7417d9b9a2e101ef5b46cdea29c2f6e9e363"
+    },
+    {
+      "package": "gke-03c2-render-confirmed-20261112T153222+0900",
+      "path": "USER_RENDER_CONFIRMATION.json",
+      "sha256": "d535ab4e64bbd99ec68e655a29815e0438c2dce7958f556131bc3497dbdbd254"
+    },
+    {
+      "package": "gke-03c2-session-close-20261112T153819+0900",
+      "path": "FINAL_STATE.json",
+      "sha256": "01724a069c99a48360e8b0e666672a5c1084a47ce5db993122591669f02dcb5e"
+    },
+    {
+      "package": "gke-03c2-session-close-20261112T153819+0900",
+      "path": "FINAL_TUNNEL_CLOSURE.json",
+      "sha256": "78e0943500def3f384c9f6366588db74ba197ca29a1abde5e8cd9ca4a6c6effe"
+    }
+  ]
+}

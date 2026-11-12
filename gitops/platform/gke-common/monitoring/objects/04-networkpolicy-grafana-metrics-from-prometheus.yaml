@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    datacenter.gcp/owner: gke03c-monitoring
+  name: grafana-metrics-from-prometheus
+  namespace: datacenter-observability
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          datacenter.gcp/component: prometheus
+    ports:
+    - port: 3000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      datacenter.gcp/component: grafana
+  policyTypes:
+  - Ingress
