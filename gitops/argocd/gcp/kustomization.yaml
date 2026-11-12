@@ -1,0 +1,9 @@
+# Offline inventory of the existing bootstrap. Not an Argo Application.
+# Runtime creation requires three external Secrets; see docs/gcp/argocd.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - crds
+  - reserved-default-project.yaml
+  - runtime

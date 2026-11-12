@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datacenter-api
+  labels:
+    datacenter.gcp/owner: gke03a-common
+  namespace: datacenter-app-dev
+spec:
+  type: ClusterIP
+  selector:
+    app: datacenter-api
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8000

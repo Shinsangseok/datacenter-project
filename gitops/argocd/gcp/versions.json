@@ -1,0 +1,40 @@
+{
+  "mode": "EXISTING_GKE_READ_ONLY_BOOTSTRAP_SNAPSHOT",
+  "chart": {
+    "name": "argo-cd",
+    "version": "10.17.1",
+    "app_version": "v3.6.1",
+    "url": "https://github.com/argoproj/argo-helm/releases/download/argo-cd-10.17.1/argo-cd-10.17.1.tgz",
+    "index_url": "https://argoproj.github.io/argo-helm/index.yaml",
+    "sha256": "1f2abd0368b5cd9562ea9316876a4e4dc2afcbcd3df2298fef6e0b9843100394"
+  },
+  "authoritative_manifest": "runtime/kustomization.yaml; transformed final execution manifests, not a values-only Helm installation",
+  "images": [
+    {
+      "repository": "quay.io/argoproj/argocd",
+      "source_tag": "v3.6.1",
+      "index_digest": "sha256:296e3d74f449b2ce45265613fcb68c18ed7366488360c8ea32f5f2a93d2e5c54",
+      "linux_amd64_manifest_digest": "sha256:967306562700bc6f4bab7c247caf69892d77624b019ca510e86b4b00fc9c5584"
+    },
+    {
+      "repository": "ecr-public.aws.com/docker/library/redis",
+      "source_tag": "8.6.4-alpine",
+      "index_digest": "sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763",
+      "linux_amd64_manifest_digest": "sha256:c64af41b8fc06a2d9b8fde812dd781aa157bed6fcf8ae1656ad4e79f3f9fc9b1"
+    }
+  ],
+  "release_name": "gke03b-argocd",
+  "namespace": "argocd",
+  "runtime_image_fields": 5,
+  "provenance_packages": [
+    "gke-03a-common-services-20261111T143740+0900",
+    "gke-03b-argo-bootstrap-20261111T161819+0900",
+    "gke-03b-execution-20261111T172529+0900",
+    "gke-03b-verification-20261111T180133+0900",
+    "gke-03b-dns-fix-20261111T191859+0900"
+  ],
+  "source_lock_sha256": "f21de0c34bc6ad4c713ffafd9c2ebc5a283107ba8d597682749b2045755ab05b",
+  "final_dns_spec_sha256": "d657ae7a2dbe78026f59046e7209fe6cfb4d2e9eaeedee146da7bc909e57669e",
+  "artifact_signature_verification": "UNVERIFIED; digest and recorded runtime identity are not signature verification",
+  "new_deployment_or_sync_authorized_by_git_integration": false
+}

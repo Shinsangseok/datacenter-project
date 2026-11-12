@@ -30,9 +30,9 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - name: Install pinned YAML parser
+      - name: Install pinned YAML and schema validators
         run: |
-          python -m pip install --only-binary=:all: PyYAML==6.0.3
+          python -m pip install --only-binary=:all: PyYAML==6.0.3 jsonschema==4.10.3
       - name: Install verified Kustomize for local rendering
         # Official v5.8.1 release checksums.txt pins the linux/amd64 archive.
         # https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.8.1
@@ -54,6 +54,16 @@ jobs:
           printf '%s\n' "$tool_dir" >> "$GITHUB_PATH"
       - name: Check GitOps manifests without cluster access
         run: python scripts/gitops_safety.py check --repo .
+      - name: Check GKE foundation without cluster access
+        run: python scripts/gcp/validate_foundation.py --repo . --output "${{ runner.temp }}/gke-foundation-validation.json"
+      - name: Run GKE and policy scope negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f tests/test_gke_foundation.py
+          test -f tests/test_gitops_gcp_scope.py
+          python -m unittest discover -s tests -p test_gke_foundation.py -v
+          python -m unittest discover -s tests -p test_gitops_gcp_scope.py -v
       - name: Run scoped safety negative tests
         shell: bash
         run: |

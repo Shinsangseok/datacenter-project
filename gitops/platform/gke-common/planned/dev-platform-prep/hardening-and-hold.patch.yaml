@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api
+spec:
+  replicas: 0
+  template:
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

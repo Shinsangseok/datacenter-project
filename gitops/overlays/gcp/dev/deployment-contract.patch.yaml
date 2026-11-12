@@ -1,0 +1,103 @@
+# OFFLINE DRAFT: dependencies and deployment approval are required before use.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacenter-api
+  annotations:
+    deployment.datacenter/image-tag: ghcr.io/shinsangseok/datacenter-api:sha-001aeaeb93cc80312e0de1890ecb46c7b4baca16-41401445661-1
+    deployment.datacenter/source-revision: 001aeaeb93cc80312e0de1890ecb46c7b4baca16
+spec:
+  template:
+    spec:
+      serviceAccountName: datacenter-api-dev
+      nodeSelector:
+        cloud.google.com/gke-nodepool: shared-pool
+      tolerations: []
+      volumes:
+      - name: db-ca
+        configMap:
+          name: datacenter-api-db-ca
+          defaultMode: 420
+          items:
+          - key: ca.pem
+            path: ca.pem
+      containers:
+      - name: datacenter-api
+        image: ghcr.io/shinsangseok/datacenter-api@sha256:5358f946c6c4bc853af2687577257821699870ef5e3e9a8d148c68cecadd773c
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-api-secret
+              key: DB_HOST
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-api-secret
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-api-secret
+              key: DB_PASSWORD
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: datacenter-api-config
+              key: DB_NAME
+        - name: DB_PORT
+          value: '3306'
+        - name: DB_SSL_CA
+          value: /etc/datacenter/certs/ca.pem
+        - name: DB_EXPECTED_HOST
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-target-policy
+              key: DB_EXPECTED_HOST
+        - name: DB_EXPECTED_USER
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-target-policy
+              key: DB_EXPECTED_USER
+        - name: DB_EXPECTED_NAME
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-target-policy
+              key: DB_EXPECTED_NAME
+        - name: MLFLOW_TRACKING_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-mlflow-client
+              key: MLFLOW_TRACKING_USERNAME
+        - name: MLFLOW_TRACKING_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: datacenter-mlflow-client
+              key: MLFLOW_TRACKING_PASSWORD
+        - name: MLFLOW_TRACKING_URI
+          value: http://mlflow.mlflow-dev.svc.cluster.local:5000
+        - name: MLFLOW_ENV
+          value: dev
+        - name: MODEL_SOURCE
+          value: registry
+        - name: WRITE_FREE_INFERENCE_ENABLED
+          value: 'false'
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: db-ca
+          mountPath: /etc/datacenter/certs
+          readOnly: true
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8000
+            scheme: HTTP
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 48
+          successThreshold: 1

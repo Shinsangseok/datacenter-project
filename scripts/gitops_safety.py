@@ -38,6 +38,8 @@ TRACKING_VALUE = "datacenter-api-dev:apps/Deployment:datacenter-app-dev/datacent
 LAST_APPLIED = "kubectl.kubernetes.io/last-applied-configuration"
 REVISION_KEY = "deployment.kubernetes.io/revision"
 PATHS = ("gitops/overlays/aws/dev", "gitops/overlays/aws/dev-rollback", "gitops/argocd/dev")
+# GCP sources have a separate strict policy/schema check in the same offline CI job.
+GCP_SOURCE_PREFIXES = ("gitops/overlays/gcp/", "gitops/argocd/gcp/", "gitops/platform/gke-common/")
 SCHEMA = "cd01b3-sanitized-deployment-v1"
 CANDIDATE_PATCH = "gitops/overlays/aws/dev/deployment-contract.patch.yaml"
 ROLLBACK_IMAGE_PATCH = "gitops/overlays/aws/dev-rollback/image.patch.yaml"
@@ -242,8 +244,15 @@ def inspect_sources(repo):
     require(inside(root, repo) and root.is_dir(), "GitOps directory must be inside repository")
     files = sorted(set(root.rglob("*.yaml")) | set(root.rglob("*.yml")) | set(root.rglob("Kustomization")))
     require(bool(files), "No GitOps YAML found")
+    inspected = 0
     for path in files:
         require(not path.is_symlink() and inside(path.resolve(), root), "GitOps symlinks are forbidden")
+        relative = path.relative_to(repo).as_posix()
+        if relative.startswith(GCP_SOURCE_PREFIXES):
+            # No GCP object is authorized by this AWS-only contract. The required
+            # validate_foundation.py CI step validates these exact separate roots.
+            continue
+        inspected += 1
         docs = load_yaml(path.read_text())
         require(len(docs) == 1, "Source YAML must contain one document")
         doc = docs[0]
@@ -264,7 +273,7 @@ def inspect_sources(repo):
             require(inside(target.resolve(), root) and target.exists(), "Kustomize reference escapes GitOps or is missing")
             require(target.is_dir() or target.suffix in {".yaml", ".yml"}, "Resource and patch files must be validated YAML")
             require(not any(part.is_symlink() for part in [target, *target.parents] if inside(part, root)), "Kustomize symlink reference denied")
-    return len(files)
+    return inspected
 
 
 def run_readonly(command):
@@ -302,7 +311,9 @@ def check(repo, live_snapshot=None):
     revision = validate_controls(argo)
     result = {"status": "PASS", "static": "PASS", "yaml_files": count, "revision": revision,
               "live_comparison": "NOT_RUN", "actual_argo_apply": "UNVERIFIED", "sync_authorized": False,
-              "candidate_provenance": "STATIC_CONTRACT_VERIFIED_EXECUTION_NOT_AUTHORIZED"}
+              "candidate_provenance": "STATIC_CONTRACT_VERIFIED_EXECUTION_NOT_AUTHORIZED",
+              "source_scope": "AWS_EXISTING_CONTRACT",
+              "gcp_policy": "SEPARATE_VALIDATE_FOUNDATION_CHECK_REQUIRED"}
     if live_snapshot is not None:
         evidence_path(Path(live_snapshot))
         path = Path(live_snapshot).resolve()

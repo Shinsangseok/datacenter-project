@@ -1,0 +1,45 @@
+{
+  "core_GVK_count": 12,
+  "core_definition_count": 187,
+  "core_source_sha256": "df7d38f0a9d0a5e1c512f311f21b0aa72923d5977bd6dafb1ee2d493cbae1293",
+  "custom_GVK_count": 3,
+  "files": [
+    {
+      "path": "kubernetes-subset.json",
+      "sha256": "6b8f1819a756dfe4e55e647e9533f254c3a49efd2fa776c2fe2a6a22076bf70c",
+      "size": 341522
+    },
+    {
+      "path": "gateway-subset.json",
+      "sha256": "4ef3154d4a19a2db3d3fc517d8f3f390371625d366ed7b5e1b6107e67c931978",
+      "size": 162191
+    },
+    {
+      "path": "grafana-dashboard-v2-subset.json",
+      "sha256": "7e8322cc96a727ad043aa3a2b547697e3357fcac8986781d707b859ad3f3ae19",
+      "size": 84382
+    },
+    {
+      "path": "aws-source-baseline.json",
+      "sha256": "df5495e6e5357689802a4534ad1bcb67eb9b200e769a04c4436fe5a5ea5894ad",
+      "size": 7572
+    },
+    {
+      "path": "dashboard-contract.json",
+      "sha256": "f325596adbf769879f6a3b7e5c8abab4ce5446065607fbf23085e7f94d5c9448",
+      "size": 624
+    },
+    {
+      "path": "source-metadata-contract.json",
+      "sha256": "e6913fa4fdcdffad434c9362ca55bfe909d41a78704c9fc1ce02ce7e08600d36",
+      "size": 15885
+    }
+  ],
+  "format": "gke-foundation-local-schemas-v1",
+  "grafana_definition_count": 117,
+  "limitations": [
+    "Offline structural validation; no admission/CEL/defaulting/live-PSS/runtime/permission proof.",
+    "Grafana plugin options/PromQL semantics remain partly opaque; exact six approved source expressions are preserved."
+  ],
+  "policy": "Only transitive local $ref closure retained. No online schema resolver. Descriptions/rules retained; no schema weakening. CRD AppProject schema read directly from integrated pinned Argo CRDs."
+}

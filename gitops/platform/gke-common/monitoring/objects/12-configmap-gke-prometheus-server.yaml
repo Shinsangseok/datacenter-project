@@ -1,0 +1,32 @@
+apiVersion: v1
+data:
+  alerting_rules.yml: '{}
+
+    '
+  alerts: '{}
+
+    '
+  allow-snippet-annotations: 'false'
+  prometheus.yml: "global:\n  evaluation_interval: 30s\n  scrape_interval: 30s\n \
+    \ scrape_timeout: 10s\nscrape_configs:\n- job_name: prometheus\n  static_configs:\n\
+    \  - targets:\n    - localhost:9090\n- job_name: gke-grafana-bootstrap\n  metrics_path:\
+    \ /metrics\n  static_configs:\n  - targets:\n    - gke-grafana.datacenter-observability.svc.cluster.local:80\n\
+    \nrule_files:\n- /etc/config/recording_rules.yml\n- /etc/config/alerting_rules.yml\n\
+    - /etc/config/rules\n- /etc/config/alerts\n"
+  recording_rules.yml: '{}
+
+    '
+  rules: '{}
+
+    '
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/instance: gke-prometheus
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: prometheus
+    app.kubernetes.io/version: v3.16.0
+    helm.sh/chart: prometheus-29.43.0
+  name: gke-prometheus-server
+  namespace: datacenter-observability
